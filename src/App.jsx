@@ -55,10 +55,10 @@ export default function App(){
       <HeroGlobe>
         <div className="text-center mb-4">
           <h1 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-sky-400 via-emerald-300 to-sky-400 inline-block text-transparent bg-clip-text">
-            {lang==='ar' ? "لا تدع المطر يفسد خططك!" : "Don't Let Rain Ruin Your Plans!"}
+            {lang==='ar' ? "!لا تدع المطر يفسد خططك" : "Don't Let Rain Ruin Your Plans!"}
           </h1>
           <p className="mt-2 text-white/80 flex items-center justify-center gap-2">
-            🌎 {L.subtitle} ✨
+            🌎 {L.subtitle} 
           </p>
         </div>
 
@@ -74,9 +74,7 @@ export default function App(){
           />
         </div>
 
-        <div className="absolute right-4 top-4">
-          <span className="badge">🚀 NASA Space Apps 2025</span>
-        </div>
+        
       </HeroGlobe>
 
       {/* === MAP + RESULTS === */}
