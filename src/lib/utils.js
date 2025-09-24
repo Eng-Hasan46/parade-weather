@@ -1,4 +1,21 @@
-export function heatIndexC(T,RH=60){const Tf=T*9/5+32;const HI=-42.379+2.04901523*Tf+10.14333127*RH-0.22475541*Tf*RH-0.00683783*Tf*Tf-0.05481717*RH*RH+0.00122874*Tf*Tf*RH+0.00085282*Tf*RH*RH-0.00000199*Tf*Tf*RH*RH;return(HI-32)*5/9;}
-export function verdict({pop,uv,apparentC,wind}){if(pop>=60)return{icon:"🌧️",en:"High chance of rain — carry an umbrella.",ar:"احتمال عالٍ للمطر — خذ مظلة."};if(apparentC>=40)return{icon:"🥵",en:"Dangerous heat — avoid midday and hydrate.",ar:"حرارة خطيرة — تجنّب الظهيرة واشرب ماء."};if(uv>=8)return{icon:"☀️",en:"Very high UV — sunscreen and shade.",ar:"أشعة UV عالية جداً — واقي شمس وابحث عن الظل."};if(wind>=35)return{icon:"💨",en:"Windy — secure light items.",ar:"رياح قوية — ثبّت الأغراض الخفيفة."};return{icon:"🙂",en:"Looks okay — enjoy your event.",ar:"الوضع طيب — استمتع بوقتك."};}
-export function fmt(v,u){return `${Math.round(v)}${u}`;}
-export const labels={en:{title:"Will It Rain On My Parade?",subtitle:"Accurate, human-friendly guidance powered by Earth observation & forecasts.",location:"Event Location",date:"Event Date",time:"Event Time",check:"Check My Parade Weather",hourly:"Hourly Conditions",temp:"Temp °C",precip:"Precip %",uv:"UV Index",wind:"Wind"},ar:{title:"هل ستمطر في حفلي؟",subtitle:"إرشادات واضحة تعتمد على رصد الأرض والتنبؤات.",location:"موقع الحدث",date:"تاريخ الحدث",time:"وقت الحدث",check:"تحقّق من طقس الحدث",hourly:"الظروف بالساعة",temp:"الحرارة °م",precip:"احتمال المطر %",uv:"مؤشر UV",wind:"الرياح"}};
+export function heatIndexC(T,RH=60){
+  const Tf=T*9/5+32;
+  const HI=-42.379+2.04901523*Tf+10.14333127*RH-0.22475541*Tf*RH-0.00683783*Tf*Tf-0.05481717*RH*RH+0.00122874*Tf*Tf*RH+0.00085282*Tf*RH*RH-0.00000199*Tf*Tf*RH*RH;
+  return (HI-32)*5/9;
+}
+export function verdict({pop,uv,apparentC,wind}){
+  if(pop>=60) return { icon:"🌧️", en:"High chance of rain — carry an umbrella.", ar:"احتمال عالٍ للمطر — خذ مظلة." };
+  if(apparentC>=40) return { icon:"🥵", en:"Dangerous heat — avoid midday and hydrate.", ar:"حرارة خطيرة — تجنّب الظهيرة واشرب ماء." };
+  if(uv>=8) return { icon:"☀️", en:"Very high UV — sunscreen and shade.", ar:"أشعة UV عالية جداً — واقي شمس وابحث عن الظل." };
+  if(wind>=35) return { icon:"💨", en:"Windy — secure light items.", ar:"رياح قوية — ثبّت الأغراض الخفيفة." };
+  return { icon:"🙂", en:"Looks okay — enjoy your event.", ar:"الوضع طيب — استمتع بوقتك." };
+}
+export function fmt(v,u){ return `${Math.round(v)}${u}`; }
+export const labels={
+  en:{ title:"Will It Rain On My Parade?", subtitle:"Accurate, human-friendly guidance powered by Earth observation & forecasts.",
+       location:"Event Location", date:"Event Date", time:"Event Time", check:"Check My Parade Weather",
+       hourly:"Hourly Conditions", temp:"Temp °C", precip:"Precip %", uv:"UV Index", wind:"Wind" },
+  ar:{ title:"هل ستمطر في حفلي؟", subtitle:"إرشادات واضحة تعتمد على رصد الأرض والتنبؤات.",
+       location:"موقع الحدث", date:"تاريخ الحدث", time:"وقت الحدث", check:"تحقّق من طقس الحدث",
+       hourly:"الظروف بالساعة", temp:"الحرارة °م", precip:"احتمال المطر %", uv:"مؤشر UV", wind:"الرياح" }
+};
