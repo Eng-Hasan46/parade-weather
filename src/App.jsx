@@ -49,12 +49,21 @@ export default function App(){
         </div>
       </div>
 
-      <section className="card p-8 mb-6 text-center">
-        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-ocean-500 to-leaf-500 inline-block text-transparent bg-clip-text drop-shadow">
-          {lang==='ar' ? "لا تدع المطر يفسد خططك!" : "Don't Let Rain Ruin Your Plans!"}
-        </h1>
-        <p className="mt-3 text-white/80">{L.subtitle}</p>
+            <section className="card p-8 mb-6 relative overflow-hidden">
+        {/* decorative clouds */}
+        <div className="pointer-events-none absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full bg-white/10 blur-3xl"></div>
+        <div className="pointer-events-none absolute -bottom-24 -right-24 w-[420px] h-[420px] rounded-full bg-white/10 blur-3xl"></div>
+
+        <div className="relative z-10 text-center">
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-ocean-500 via-leaf-400 to-ocean-600 inline-block text-transparent bg-clip-text drop-shadow">
+            {lang==='ar' ? "لا تدع المطر يفسد خططك!" : "Don't Let Rain Ruin Your Plans!"}
+          </h1>
+          <p className="mt-3 text-white/80 flex items-center justify-center gap-2">
+            <span>🌧️</span>{L.subtitle}<span>🌿</span>
+          </p>
+        </div>
       </section>
+
 
       <SearchForm lang={lang} labels={L} onPick={onPick} date={date} setDate={setDate} time={time} setTime={setTime} />
       <div className="my-6"><MapPicker point={place} onPick={onPick}/></div>
@@ -67,10 +76,11 @@ export default function App(){
           </div>
           <div className="md:col-span-2 card p-5">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Stat label={L.temp}  value={snapshot?fmt(snapshot.temp,"°C"):"--"} />
-              <Stat label={L.precip} value={snapshot?fmt(snapshot.pop,"%"):"--"} />
-              <Stat label={L.uv}    value={snapshot?Math.round(snapshot.uv):"--"} />
-              <Stat label={L.wind}  value={snapshot?fmt(snapshot.wind," km/h"):"--"} />
+              <Stat icon="🌡️" label={L.temp}   value={snapshot ? fmt(snapshot.temp,"°C") : "--"} />
+            <Stat icon="🌧️" label={L.precip} value={snapshot ? fmt(snapshot.pop,"%")   : "--"} />
+            <Stat icon="🔆" label={L.uv}     value={snapshot ? Math.round(snapshot.uv) : "--"} />
+            <Stat icon="💨" label={L.wind}   value={snapshot ? fmt(snapshot.wind," km/h") : "--"} />
+
             </div>
           </div>
         </div>
@@ -81,11 +91,14 @@ export default function App(){
     </div>
   );
 }
-function Stat({label, value}) {
+function Stat({ label, value, icon }) {
   return (
-    <div className="text-center">
+    <div className="text-center flex flex-col items-center justify-center gap-1 p-2">
+      <div className="text-3xl">{icon}</div>
       <div className="text-white/70 text-sm">{label}</div>
       <div className="text-2xl font-semibold">{value}</div>
     </div>
   );
 }
+
+
