@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import MapPicker from "./components/MapPicker.jsx";
 import SearchForm from "./components/SearchForm.jsx";
 import DualAxisChart from "./components/DualAxisChart.jsx";
+import HeroGlobe from "./components/HeroGlobe.jsx"; // NEW
 import { getForecast } from "./lib/weather.js";
 import { heatIndexC, verdict, fmt, labels as LBL } from "./lib/utils.js";
 import "./index.css";
@@ -39,6 +40,7 @@ export default function App(){
 
   return (
     <div className="max-w-6xl mx-auto p-6 text-white">
+      {/* Header bar */}
       <div className="flex items-center justify-between mb-4">
         <div className="text-lg font-bold">☔️ ParadeWeather</div>
         <div className="flex items-center gap-2">
@@ -49,23 +51,35 @@ export default function App(){
         </div>
       </div>
 
-            <section className="card p-8 mb-6 relative overflow-hidden">
-        {/* decorative clouds */}
-        <div className="pointer-events-none absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full bg-white/10 blur-3xl"></div>
-        <div className="pointer-events-none absolute -bottom-24 -right-24 w-[420px] h-[420px] rounded-full bg-white/10 blur-3xl"></div>
-
-        <div className="relative z-10 text-center">
-          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-ocean-500 via-leaf-400 to-ocean-600 inline-block text-transparent bg-clip-text drop-shadow">
+      {/* === HERO WITH GLOBE === */}
+      <HeroGlobe>
+        <div className="text-center mb-4">
+          <h1 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-sky-400 via-emerald-300 to-sky-400 inline-block text-transparent bg-clip-text">
             {lang==='ar' ? "لا تدع المطر يفسد خططك!" : "Don't Let Rain Ruin Your Plans!"}
           </h1>
-          <p className="mt-3 text-white/80 flex items-center justify-center gap-2">
-            <span>🌧️</span>{L.subtitle}<span>🌿</span>
+          <p className="mt-2 text-white/80 flex items-center justify-center gap-2">
+            🌎 {L.subtitle} ✨
           </p>
         </div>
-      </section>
 
+        <div className="mt-3">
+          <SearchForm
+            lang={lang}
+            labels={L}
+            onPick={onPick}
+            date={date}
+            setDate={setDate}
+            time={time}
+            setTime={setTime}
+          />
+        </div>
 
-      <SearchForm lang={lang} labels={L} onPick={onPick} date={date} setDate={setDate} time={time} setTime={setTime} />
+        <div className="absolute right-4 top-4">
+          <span className="badge">🚀 NASA Space Apps 2025</span>
+        </div>
+      </HeroGlobe>
+
+      {/* === MAP + RESULTS === */}
       <div className="my-6"><MapPicker point={place} onPick={onPick}/></div>
 
       {place && (
@@ -77,20 +91,23 @@ export default function App(){
           <div className="md:col-span-2 card p-5">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Stat icon="🌡️" label={L.temp}   value={snapshot ? fmt(snapshot.temp,"°C") : "--"} />
-            <Stat icon="🌧️" label={L.precip} value={snapshot ? fmt(snapshot.pop,"%")   : "--"} />
-            <Stat icon="🔆" label={L.uv}     value={snapshot ? Math.round(snapshot.uv) : "--"} />
-            <Stat icon="💨" label={L.wind}   value={snapshot ? fmt(snapshot.wind," km/h") : "--"} />
-
+              <Stat icon="🌧️" label={L.precip} value={snapshot ? fmt(snapshot.pop,"%")   : "--"} />
+              <Stat icon="🔆" label={L.uv}     value={snapshot ? Math.round(snapshot.uv) : "--"} />
+              <Stat icon="💨" label={L.wind}   value={snapshot ? fmt(snapshot.wind," km/h") : "--"} />
             </div>
           </div>
         </div>
       )}
 
       {place && data && <DualAxisChart data={data} date={date} labels={L} />}
-      <footer className="text-center text-white/60 text-xs mt-8">Data: Open-Meteo • Prototype only — not for safety-critical use</footer>
+
+      <footer className="text-center text-white/60 text-xs mt-8">
+        Data: Open-Meteo • Prototype only — not for safety-critical use
+      </footer>
     </div>
   );
 }
+
 function Stat({ label, value, icon }) {
   return (
     <div className="text-center flex flex-col items-center justify-center gap-1 p-2">
@@ -100,5 +117,3 @@ function Stat({ label, value, icon }) {
     </div>
   );
 }
-
-
