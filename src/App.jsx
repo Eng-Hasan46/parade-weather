@@ -42,7 +42,11 @@ export default function App(){
     <div className="max-w-6xl mx-auto p-6 text-white">
       {/* Header bar */}
       <div className="flex items-center justify-between mb-4">
-        <div className="text-lg font-bold">☔️ ParadeWeather</div>
+        <div className="flex items-center gap-2 text-2xl md:text-3xl font-extrabold">
+         <span role="img" aria-label="umbrella">☔️</span>
+         ParadeWeather
+        </div>
+
         <div className="flex items-center gap-2">
           <span className="badge">🚀 NASA Space Apps 2025</span>
           <button onClick={()=>setLang(l=>l==='en'?'ar':'en')} className="rounded-full px-3 py-1 bg-white/10 hover:bg-white/20">
