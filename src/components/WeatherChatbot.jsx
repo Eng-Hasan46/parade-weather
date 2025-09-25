@@ -7,12 +7,7 @@ export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' 
     const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
-    const [apiKey, setApiKey] = useState(
-        import.meta.env.VITE_GEMINI_API_KEY ||
-        config.geminiApiKey ||
-        localStorage.getItem('gemini_api_key') ||
-        ''
-    );
+    const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
     const [showApiKeyInput, setShowApiKeyInput] = useState(false);
     const messagesEndRef = useRef(null);
     const aiService = useRef(null);
@@ -51,8 +46,9 @@ export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' 
     const handleSendMessage = async () => {
         if (!inputValue.trim()) return;
 
-        // Check if API key is available
-        if (!apiKey) {
+        // Check if API key is available (from environment or user input)
+        const hasApiKey = import.meta.env.VITE_GEMINI_API_KEY || apiKey;
+        if (!hasApiKey) {
             const errorMessage = {
                 id: Date.now(),
                 type: 'bot',
@@ -232,8 +228,8 @@ export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' 
                             >
                                 <div
                                     className={`max-w-[80%] p-3 rounded-lg text-sm ${message.type === 'user'
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-slate-700 text-slate-100'
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-slate-700 text-slate-100'
                                         }`}
                                 >
                                     {message.content}

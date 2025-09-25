@@ -1,7 +1,8 @@
 // Gemini AI Service for Weather Assistant
 export class GeminiAIService {
   constructor(apiKey) {
-    this.apiKey = apiKey;
+    // Use environment variable first, then user-provided key
+    this.apiKey = import.meta.env.VITE_GEMINI_API_KEY || apiKey;
     this.baseUrl =
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
   }
