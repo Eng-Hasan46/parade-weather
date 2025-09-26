@@ -209,60 +209,8 @@ export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' 
                                     </svg>
                                 )}
                             </button>
-
-                            {/* Settings button */}
-                            <button
-                                onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-                                className="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
-                                title={lang === 'ar' ? 'إعدادات API' : 'API Settings'}
-                            >
-                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-                                </svg>
-                            </button>
                         </div>
                     </div>
-
-                    {/* API Key Input (when visible) */}
-                    {showApiKeyInput && (
-                        <div className="p-4 border-b border-slate-600/30 bg-slate-800/50">
-                            <div className="mb-2">
-                                <label className="text-sm text-white font-medium">
-                                    {lang === 'ar' ? 'مفتاح Gemini API' : 'Gemini API Key'}
-                                </label>
-                                <p className="text-xs text-slate-400 mt-1">
-                                    {lang === 'ar'
-                                        ? 'احصل على مفتاح مجاني من Google AI Studio'
-                                        : 'Get a free key from Google AI Studio'}
-                                </p>
-                            </div>
-                            <div className="flex gap-2">
-                                <input
-                                    type="password"
-                                    value={apiKey}
-                                    onChange={(e) => setApiKey(e.target.value)}
-                                    placeholder={lang === 'ar' ? 'أدخل مفتاح API...' : 'Enter API key...'}
-                                    className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                />
-                                <button
-                                    onClick={handleSaveApiKey}
-                                    className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                                >
-                                    {lang === 'ar' ? 'حفظ' : 'Save'}
-                                </button>
-                            </div>
-                            <div className="mt-2">
-                                <a
-                                    href="https://makersuite.google.com/app/apikey"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-xs text-blue-400 hover:text-blue-300 underline"
-                                >
-                                    {lang === 'ar' ? 'احصل على مفتاح API مجاني' : 'Get free API key →'}
-                                </a>
-                            </div>
-                        </div>
-                    )}
 
                     {/* Messages */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-3">
