@@ -4,6 +4,7 @@ import { config } from '../config.js';
 
 export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' }) {
     const [isOpen, setIsOpen] = useState(false);
+    const [isMaximized, setIsMaximized] = useState(false);
     const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
@@ -11,6 +12,18 @@ export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' 
     const [showApiKeyInput, setShowApiKeyInput] = useState(false);
     const messagesEndRef = useRef(null);
     const aiService = useRef(null);
+
+    // Function to clean markdown formatting from AI responses
+    const cleanMarkdownText = (text) => {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
+            .replace(/\*(.*?)\*/g, '$1')     // Remove italic formatting
+            .replace(/#{1,6}\s/g, '')        // Remove heading markers
+            .replace(/`(.*?)`/g, '$1')       // Remove inline code formatting
+            .replace(/\n\s*\*/g, '\n•')      // Convert markdown bullets to bullet points
+            .replace(/\n\s*-/g, '\n•')       // Convert dashes to bullet points
+            .trim();
+    };
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -35,8 +48,8 @@ export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' 
                 id: Date.now(),
                 type: 'bot',
                 content: lang === 'ar'
-                    ? 'مرحباً! أنا مساعد الطقس الذكي. أستخدم الذكاء الاصطناعي لتحليل بيانات الطقس ومساعدتك في التخطيط لأنشطتك.'
-                    : 'Hello! I\'m your intelligent weather assistant. I use AI to analyze weather data and help you plan your activities.',
+                    ? 'مرحباً! أنا مساعد الطقس والسفر الذكي.\n\nيمكنني مساعدتك في:\n• تحليل بيانات الطقس بالتفصيل\n• اقتراح أماكن للزيارة حسب الطقس المفضل\n• التوصية بأفضل الأنشطة للطقس الحالي\n• اكتشاف الأنماط والاتجاهات الجوية\n\nنصيحة: إذا كانت الخدمة مزدحمة، سأقدم لك تحليلاً سريعاً ويمكنك المحاولة مرة أخرى للحصول على تحليل مفصل.\n\nجرب أن تسأل: "أين يمكنني الذهاب في طقس مشمس؟" أو "حلل لي بيانات الطقس الحالية"'
+                    : 'Hello! I\'m your intelligent weather & travel assistant.\n\nI can help you with:\n• Detailed weather data analysis\n• Suggest places to visit based on your weather preferences\n• Recommend best activities for current conditions\n• Identify weather patterns and trends\n\nTip: If the AI service is busy, I\'ll provide a quick summary and you can try again for detailed analysis.\n\nTry asking: "Where can I go for sunny weather?" or "Analyze the current weather data for me"',
                 timestamp: new Date()
             };
             setMessages([welcomeMessage]);
@@ -94,12 +107,21 @@ export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' 
         } catch (error) {
             console.error('AI Response Error:', error);
 
+            let errorContent;
+            if (error.message.includes('503') || error.message.includes('overloaded')) {
+                errorContent = lang === 'ar'
+                    ? '⚠️ الخدمة مزدحمة حالياً بسبب كثرة الطلبات. تم تفعيل النظام الاحتياطي.\n\n🔄 يرجى المحاولة مرة أخرى خلال دقيقة للحصول على تحليل مفصل بالذكاء الاصطناعي.'
+                    : '⚠️ Service is currently overloaded due to high demand. Fallback system activated.\n\n🔄 Please try again in a minute for detailed AI analysis.';
+            } else {
+                errorContent = lang === 'ar'
+                    ? `عذراً، حدث خطأ: ${error.message.split('-')[1] || error.message}\n\n💡 تأكد من اتصال الإنترنت أو جرب مرة أخرى.`
+                    : `Sorry, there was an error: ${error.message.split('-')[1] || error.message}\n\n💡 Check your internet connection or try again.`;
+            }
+
             const errorMessage = {
                 id: Date.now() + 1,
                 type: 'bot',
-                content: lang === 'ar'
-                    ? 'عذراً، حدث خطأ في الحصول على الرد. يرجى التحقق من مفتاح API والمحاولة مرة أخرى.'
-                    : 'Sorry, there was an error getting a response. Please check your API key and try again.',
+                content: errorContent,
                 timestamp: new Date()
             };
 
@@ -151,7 +173,10 @@ export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' 
 
             {/* Chat Window */}
             {isOpen && (
-                <div className="fixed bottom-24 right-6 w-96 h-96 z-40 bg-slate-900/95 backdrop-blur-md border border-slate-600/30 rounded-2xl shadow-2xl flex flex-col">
+                <div className={`fixed z-40 bg-slate-900/95 backdrop-blur-md border border-slate-600/30 shadow-2xl flex flex-col transition-all duration-300 ${isMaximized
+                    ? 'inset-4 md:inset-8 rounded-xl' // Full screen with margin and smaller border radius
+                    : 'bottom-4 right-4 md:bottom-24 md:right-6 w-[95vw] h-[85vh] md:w-[500px] md:h-[600px] rounded-2xl' // Mobile-first responsive
+                    }`}>
                     {/* Chat Header */}
                     <div className="p-4 border-b border-slate-600/30 flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -166,16 +191,36 @@ export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' 
                             </div>
                         </div>
 
-                        {/* Settings button */}
-                        <button
-                            onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-                            className="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
-                            title={lang === 'ar' ? 'إعدادات API' : 'API Settings'}
-                        >
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-                            </svg>
-                        </button>
+                        {/* Maximize and Settings buttons */}
+                        <div className="flex items-center gap-2">
+                            {/* Maximize/Minimize button */}
+                            <button
+                                onClick={() => setIsMaximized(!isMaximized)}
+                                className="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                                title={lang === 'ar' ? (isMaximized ? 'تصغير' : 'تكبير') : (isMaximized ? 'Minimize' : 'Maximize')}
+                            >
+                                {isMaximized ? (
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z" />
+                                    </svg>
+                                ) : (
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" />
+                                    </svg>
+                                )}
+                            </button>
+
+                            {/* Settings button */}
+                            <button
+                                onClick={() => setShowApiKeyInput(!showApiKeyInput)}
+                                className="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                                title={lang === 'ar' ? 'إعدادات API' : 'API Settings'}
+                            >
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
                     {/* API Key Input (when visible) */}
@@ -227,12 +272,12 @@ export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' 
                                 className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                             >
                                 <div
-                                    className={`max-w-[80%] p-3 rounded-lg text-sm ${message.type === 'user'
+                                    className={`max-w-[80%] p-3 rounded-lg text-sm whitespace-pre-wrap ${message.type === 'user'
                                         ? 'bg-blue-600 text-white'
                                         : 'bg-slate-700 text-slate-100'
                                         }`}
                                 >
-                                    {message.content}
+                                    {message.type === 'bot' ? cleanMarkdownText(message.content) : message.content}
                                 </div>
                             </div>
                         ))}
