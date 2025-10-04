@@ -1,10 +1,12 @@
-import { useMemo, useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MapPicker from "./components/MapPicker.jsx";
 import SearchForm from "./components/SearchForm.jsx";
-
+import DualAxisChart from "./components/DualAxisChart.jsx";
 import HeroGlobe from "./components/HeroGlobe.jsx";
+import RainRadar from "./components/RainRadar.jsx";
 import WeatherChatbot from "./components/WeatherChatbot.jsx";
 import { getForecast } from "./lib/weather.js";
+import { getPowerHourlyPrecip } from "./lib/nasa.js";
 import { heatIndexC, verdict, fmt, labels as LBL } from "./lib/utils.js";
 import { NASAPowerService } from "./lib/nasaPowerAPI.js";
 import "./index.css";
@@ -19,16 +21,16 @@ export default function App() {
   const [expandedCard, setExpandedCard] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showLocationAlert, setShowLocationAlert] = useState(false);
+  const [powerData, setPowerData] = useState(null);
 
   const nasaPowerService = useMemo(() => new NASAPowerService(), []);
 
   function checkParadeWeather() {
     if (!place) {
       setShowLocationAlert(true);
-      setTimeout(() => setShowLocationAlert(false), 8000); // Hide after 8 seconds
+      setTimeout(() => setShowLocationAlert(false), 8000);
       return;
     }
-    // If location is selected, scroll to results
     const resultsSection = document.querySelector('.card');
     if (resultsSection) {
       resultsSection.scrollIntoView({ behavior: 'smooth' });
@@ -38,7 +40,6 @@ export default function App() {
   async function onPick(p) {
     setPlace(p); setLoading(true);
     try {
-      // Fetch current weather data
       const f = await getForecast(p.lat, p.lon); setData(f);
       const h = f.hourly, idx = h.time.reduce((a, t, i) => { if (t.startsWith(date)) a.push(i); return a; }, []);
       const tIdx = idx.find(i => h.time[i].endsWith("12:00")) ?? (idx.length ? idx[Math.floor(idx.length / 2)] : null);
@@ -48,7 +49,20 @@ export default function App() {
         const wind = h.wind_speed_10m[tIdx] ?? 0;
         setSum(verdict({ pop, uv, apparentC: heatIndexC(temp, 60), wind }));
       }
-      // NASA data will be fetched by useEffect hook when place changes
+      
+      // Fetch NASA POWER data
+      try {
+        const selectedDate = new Date(date);
+        const nasaResult = await nasaPowerService.getAnnualAverageData(p.lat, p.lon, selectedDate);
+        setNasaData(nasaResult);
+        
+        const powerResult = await getPowerHourlyPrecip(p.lat, p.lon, selectedDate);
+        setPowerData(powerResult);
+      } catch (error) {
+        console.error('Failed to fetch NASA data:', error);
+        setNasaData(null);
+        setPowerData(null);
+      }
     } finally { setLoading(false); }
   }
 
@@ -60,7 +74,6 @@ export default function App() {
     return { temp: h.temperature_2m[t], pop: h.precipitation_probability[t], uv: h.uv_index[t], wind: h.wind_speed_10m[t] };
   }, [data, date]);
 
-  // Refresh NASA data when date changes with debouncing
   useEffect(() => {
     if (place && date) {
       const timeoutId = setTimeout(async () => {
@@ -68,11 +81,15 @@ export default function App() {
           const selectedDate = new Date(date);
           const nasaResult = await nasaPowerService.getAnnualAverageData(place.lat, place.lon, selectedDate);
           setNasaData(nasaResult);
+          
+          const powerResult = await getPowerHourlyPrecip(place.lat, place.lon, selectedDate);
+          setPowerData(powerResult);
         } catch (error) {
           console.error('Failed to fetch NASA data for date change:', error);
           setNasaData(null);
+          setPowerData(null);
         }
-      }, 300); // 300ms debounce to reduce API calls
+      }, 300);
 
       return () => clearTimeout(timeoutId);
     }
@@ -95,7 +112,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* === HERO WITH GLOBE === */}
       <HeroGlobe>
         <div className="text-center mb-4">
           <h1 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-sky-400 via-emerald-300 to-sky-400 inline-block text-transparent bg-clip-text">
@@ -118,11 +134,8 @@ export default function App() {
             setTime={setTime}
           />
         </div>
-
-
       </HeroGlobe>
 
-      {/* Location Alert */}
       {showLocationAlert && (
         <div className="mb-4 p-4 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-400/30 rounded-xl backdrop-blur-sm animate-in slide-in-from-top-2 duration-300">
           <div className="flex items-center gap-3 text-center justify-center">
@@ -136,7 +149,6 @@ export default function App() {
         </div>
       )}
 
-      {/* === MAP + RESULTS === */}
       <div className="my-6"><MapPicker point={place} onPick={onPick} /></div>
 
       {place && (
@@ -146,7 +158,6 @@ export default function App() {
         </div>
       )}
 
-      {/* NASA Historical Climate Data */}
       {place && nasaData && (
         <div className="card p-6 mb-6">
           <div className="mb-4">
@@ -161,7 +172,6 @@ export default function App() {
             </p>
           </div>
 
-          {/* Climate Metrics Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
             <button
               onClick={() => setExpandedCard(expandedCard === 'rain' ? null : 'rain')}
@@ -254,7 +264,6 @@ export default function App() {
             </button>
           </div>
 
-          {/* Expanded Card Details */}
           {expandedCard && (
             <div className="mt-6 p-6 bg-gradient-to-r from-slate-800/80 to-blue-900/50 rounded-2xl border border-slate-600/50 backdrop-blur-sm shadow-2xl animate-in slide-in-from-top-2 duration-300">
               <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
@@ -338,8 +347,7 @@ export default function App() {
                             if (cloud < 50) return lang === 'ar' ? 'غيوم متناثرة' : 'Scattered';
                             if (cloud < 75) return lang === 'ar' ? 'غيوم كثيرة' : 'Broken';
                             return lang === 'ar' ? 'غائم' : 'Overcast';
-                          })()
-                          }
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -373,8 +381,7 @@ export default function App() {
                             if (temp < 0) return lang === 'ar' ? 'ثلج محتمل' : 'Possible';
                             if (temp < 5) return lang === 'ar' ? 'نادر' : 'Rare';
                             return lang === 'ar' ? 'مستحيل' : 'Impossible';
-                          })()
-                          }
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -409,8 +416,7 @@ export default function App() {
                             if (wind < 12) return lang === 'ar' ? 'نسيم معتدل' : 'Moderate Breeze';
                             if (wind < 18) return lang === 'ar' ? 'رياح قوية' : 'Strong Wind';
                             return lang === 'ar' ? 'عاصفة' : 'Gale';
-                          })()
-                          }
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -445,8 +451,7 @@ export default function App() {
                             if (humidity < 70) return lang === 'ar' ? 'مريحة' : 'Comfortable';
                             if (humidity < 85) return lang === 'ar' ? 'رطبة' : 'Humid';
                             return lang === 'ar' ? 'رطبة جداً' : 'Very Humid';
-                          })()
-                          }
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -455,6 +460,26 @@ export default function App() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Rain Radar section */}
+      {place && powerData && (
+        <div className="card p-6 mb-6">
+          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+            🌧️ {lang === 'ar' ? 'رادار المطر' : 'Rain Radar'}
+          </h3>
+          <RainRadar data={powerData} date={date} lang={lang} />
+        </div>
+      )}
+
+      {/* Charts section */}
+      {place && data && (
+        <div className="card p-6 mb-6">
+          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+            📊 {lang === 'ar' ? 'الرسوم البيانية' : 'Weather Charts'}
+          </h3>
+          <DualAxisChart data={data} date={date} lang={lang} />
         </div>
       )}
 
