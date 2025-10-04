@@ -200,8 +200,8 @@ export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' 
                             <button
                                 onClick={() => setIncludeNASAData(!includeNASAData)}
                                 className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${includeNASAData
-                                        ? 'bg-yellow-500 text-white'
-                                        : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white'
+                                    ? 'bg-yellow-500 text-white'
+                                    : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white'
                                     }`}
                                 title={lang === 'ar' ? 'بيانات ناسا السنوية' : 'NASA Annual Data'}
                             >
