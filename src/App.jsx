@@ -194,16 +194,16 @@ export default function App() {
             </button>
 
             <button
-              onClick={() => setExpandedCard(expandedCard === 'uv' ? null : 'uv')}
-              className="group relative p-6 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-orange-600/10 border border-yellow-400/30 hover:border-yellow-300/50 transition-all duration-300 hover:shadow-lg hover:shadow-yellow-500/25 backdrop-blur-sm"
+              onClick={() => setExpandedCard(expandedCard === 'cloud' ? null : 'cloud')}
+              className="group relative p-6 rounded-2xl bg-gradient-to-br from-gray-500/20 to-slate-600/10 border border-gray-400/30 hover:border-gray-300/50 transition-all duration-300 hover:shadow-lg hover:shadow-gray-500/25 backdrop-blur-sm"
             >
               <div className="text-center">
-                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">☀️</div>
-                <div className="text-yellow-200 text-sm font-medium mb-2">
-                  {lang === 'ar' ? 'الأشعة فوق البنفسجية' : 'UV Index'}
+                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">☁️</div>
+                <div className="text-gray-200 text-sm font-medium mb-2">
+                  {lang === 'ar' ? 'الغطاء السحابي' : 'Cloud Cover'}
                 </div>
                 <div className="text-2xl font-bold text-white">
-                  {nasaData.averages?.ALLSKY_SFC_SW_DWN ? `${(nasaData.averages.ALLSKY_SFC_SW_DWN.average * 0.4).toFixed(1)}` : '--'}
+                  {nasaData.averages?.CLOUD_AMT ? `${nasaData.averages.CLOUD_AMT.average.toFixed(1)}%` : '--'}
                 </div>
               </div>
             </button>
@@ -310,33 +310,34 @@ export default function App() {
                   </div>
                 )}
 
-                {expandedCard === 'uv' && (
+                {expandedCard === 'cloud' && (
                   <div>
                     <h4 className="font-bold mb-3 flex items-center gap-2">
-                      ☀️ {lang === 'ar' ? 'تفاصيل الأشعة فوق البنفسجية' : 'UV & Solar Details'}
+                      ☁️ {lang === 'ar' ? 'تفاصيل الغطاء السحابي' : 'Cloud Cover Details'}
                     </h4>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-white/70">{lang === 'ar' ? 'مؤشر الأشعة فوق البنفسجية:' : 'UV Index:'}</span>
-                        <div className="font-semibold">{nasaData.averages?.ALLSKY_SFC_SW_DWN ? (nasaData.averages.ALLSKY_SFC_SW_DWN.average * 0.4).toFixed(1) : '--'}</div>
-                      </div>
-                      <div>
-                        <span className="text-white/70">{lang === 'ar' ? 'الإشعاع الشمسي:' : 'Solar Irradiance:'}</span>
-                        <div className="font-semibold">{nasaData.averages?.ALLSKY_SFC_SW_DWN?.average.toFixed(2)} kWh/m²</div>
-                      </div>
-                      <div>
-                        <span className="text-white/70">{lang === 'ar' ? 'الغطاء السحابي:' : 'Cloud Coverage:'}</span>
+                        <span className="text-white/70">{lang === 'ar' ? 'متوسط الغطاء السحابي:' : 'Average Cloud Cover:'}</span>
                         <div className="font-semibold">{nasaData.averages?.CLOUD_AMT?.average.toFixed(1)}%</div>
                       </div>
                       <div>
-                        <span className="text-white/70">{lang === 'ar' ? 'مستوى الخطورة:' : 'Risk Level:'}</span>
+                        <span className="text-white/70">{lang === 'ar' ? 'أعلى غطاء سحابي:' : 'Max Cloud Cover:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.CLOUD_AMT?.max.toFixed(1)}%</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'أقل غطاء سحابي:' : 'Min Cloud Cover:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.CLOUD_AMT?.min.toFixed(1)}%</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'حالة السماء:' : 'Sky Condition:'}</span>
                         <div className="font-semibold">
                           {(() => {
-                            const uv = nasaData.averages?.ALLSKY_SFC_SW_DWN ? (nasaData.averages.ALLSKY_SFC_SW_DWN.average * 0.4) : 0;
-                            if (uv < 3) return lang === 'ar' ? 'منخفض' : 'Low';
-                            if (uv < 6) return lang === 'ar' ? 'متوسط' : 'Moderate';
-                            if (uv < 8) return lang === 'ar' ? 'عالي' : 'High';
-                            return lang === 'ar' ? 'عالي جداً' : 'Very High';
+                            const cloud = nasaData.averages?.CLOUD_AMT?.average || 50;
+                            if (cloud < 10) return lang === 'ar' ? 'صافية' : 'Clear';
+                            if (cloud < 25) return lang === 'ar' ? 'قليل الغيوم' : 'Few Clouds';
+                            if (cloud < 50) return lang === 'ar' ? 'غيوم متناثرة' : 'Scattered';
+                            if (cloud < 75) return lang === 'ar' ? 'غيوم كثيرة' : 'Broken';
+                            return lang === 'ar' ? 'غائم' : 'Overcast';
                           })()
                           }
                         </div>
