@@ -16,27 +16,52 @@ export class GeminiAIService {
     location,
     lang = "en",
     retryCount = 0,
-    includeNASAData = false
+    includeNASAData = false,
+    nasaData = null
   ) {
     if (!this.apiKey) {
       throw new Error("Gemini API key is required");
     }
 
-    // Create comprehensive weather context
-    let weatherContext = this.formatWeatherContext(weatherData, location, lang);
+    // Check if question is weather-related and redirect if needed
+    const weatherRedirect = this.checkWeatherRelevance(userMessage, lang);
+    if (weatherRedirect) {
+      return weatherRedirect;
+    }
 
-    // Add NASA POWER annual data if requested
-    if (includeNASAData && location?.latitude && location?.longitude) {
+    // Create comprehensive weather context
+    let weatherContext = this.formatWeatherContext(weatherData, location, lang, nasaData);
+
+    // Add NASA POWER annual data if available
+    if (includeNASAData && nasaData) {
+      try {
+        const nasaContext = this.nasaPowerService.formatAnnualData(
+          nasaData,
+          lang
+        );
+        weatherContext +=
+          lang === "ar"
+            ? `\n\nبيانات ناسا للمناخ السنوي:\n${nasaContext}`
+            : `\n\nNASA Annual Climate Data:\n${nasaContext}`;
+      } catch (error) {
+        console.error("Failed to format NASA POWER data:", error);
+        weatherContext +=
+          lang === "ar"
+            ? "\n\nبيانات المناخ السنوي غير متاحة"
+            : "\n\nAnnual climate data unavailable";
+      }
+    } else if (includeNASAData && location?.latitude && location?.longitude) {
+      // Fallback: fetch NASA data if not provided but requested
       try {
         const currentDate = new Date();
-        const nasaData = await this.nasaPowerService.getAnnualAverageData(
+        const fetchedNasaData = await this.nasaPowerService.getAnnualAverageData(
           location.latitude,
           location.longitude,
           currentDate
         );
 
         const nasaContext = this.nasaPowerService.formatAnnualData(
-          nasaData,
+          fetchedNasaData,
           lang
         );
         weatherContext +=
@@ -112,7 +137,8 @@ export class GeminiAIService {
             location,
             lang,
             retryCount + 1,
-            includeNASAData
+            includeNASAData,
+            nasaData
           );
         }
 
@@ -234,7 +260,7 @@ Please try again in a moment for detailed analysis.`;
       : "⚠️ Service is currently busy. Please try again shortly.";
   }
 
-  formatWeatherContext(weatherData, location, lang) {
+  formatWeatherContext(weatherData, location, lang, nasaData = null) {
     if (!weatherData || !location) {
       return lang === "ar"
         ? "لا توجد بيانات طقس متاحة حالياً."
@@ -383,7 +409,47 @@ ${todayIndices
 تحليل للأنشطة والسفر:
 - ساعات مناسبة للخروج: ${comfortTemp}/${todayIndices.length}
 - ساعات أمطار قليلة: ${lowRainHours}/${todayIndices.length}
-- ظروف رياح مقبولة: ${moderateWindHours}/${todayIndices.length}`;
+- ظروف رياح مقبولة: ${moderateWindHours}/${todayIndices.length}${
+        nasaData && nasaData.averages
+          ? `
+
+مقارنة مع البيانات التاريخية (ناسا ${
+              nasaData.location?.startYear
+            }-${nasaData.location?.endYear}):
+- درجة الحرارة مقابل التاريخية: ${
+              avgTemp -
+                (nasaData.averages.T2M?.average || avgTemp) >
+              2
+                ? "أدفأ من المعتاد"
+                : avgTemp -
+                    (nasaData.averages.T2M?.average || avgTemp) <
+                  -2
+                ? "أبرد من المعتاد"
+                : "ضمن النطاق الطبيعي"
+            } (المتوسط التاريخي: ${
+              nasaData.averages.T2M?.average?.toFixed(1) || "غ/م"
+            }°م)
+- احتمالية المطر مقابل التاريخية: ${
+              avgPrecip -
+                (nasaData.averages.RAIN_PROBABILITY_TODAY?.average ||
+                  avgPrecip) >
+              10
+                ? "أعلى من المعتاد"
+                : avgPrecip -
+                    (nasaData.averages.RAIN_PROBABILITY_TODAY?.average ||
+                      avgPrecip) <
+                  -10
+                ? "أقل من المعتاد"
+                : "ضمن النطاق الطبيعي"
+            } (المتوسط التاريخي: ${
+              nasaData.averages.RAIN_PROBABILITY_TODAY?.average?.toFixed(1) ||
+              "غ/م"
+            }%)
+- نمط المناخ: بناء على ${
+              nasaData.location?.yearsOfData || "التاريخية"
+            } سنة من البيانات`
+          : ""
+      }`;
     } else {
       return `Location: ${location.name}
 Date: ${today}
@@ -444,92 +510,225 @@ ${
     : weatherQuality > 40
     ? "Museums, Shopping, Indoor cafes"
     : "Indoor activities recommended"
-}`;
+}${
+      nasaData && nasaData.averages
+        ? `
+
+HISTORICAL CLIMATE COMPARISON (NASA Data ${
+            nasaData.location?.startYear
+          }-${nasaData.location?.endYear}):
+- Temperature vs Historical: ${
+            avgTemp -
+              (nasaData.averages.T2M?.average || avgTemp) >
+            2
+              ? "Warmer than usual"
+              : avgTemp -
+                  (nasaData.averages.T2M?.average || avgTemp) <
+                -2
+              ? "Cooler than usual"
+              : "Normal range"
+          } (Historical avg: ${
+            nasaData.averages.T2M?.average?.toFixed(1) || "N/A"
+          }°C)
+- Rain Probability vs Historical: ${
+            avgPrecip -
+              (nasaData.averages.RAIN_PROBABILITY_TODAY?.average || avgPrecip) >
+            10
+              ? "Higher than usual"
+              : avgPrecip -
+                  (nasaData.averages.RAIN_PROBABILITY_TODAY?.average ||
+                    avgPrecip) <
+                -10
+              ? "Lower than usual"
+              : "Normal range"
+          } (Historical avg: ${
+            nasaData.averages.RAIN_PROBABILITY_TODAY?.average?.toFixed(1) ||
+            "N/A"
+          }%)
+- Climate Pattern: Based on ${
+            nasaData.location?.yearsOfData || "historical"
+          } years of data
+- Best Historical Months: ${
+            Object.entries(nasaData.averages || {})
+              .filter(([key, value]) => key.includes("T2M") && value.average)
+              .sort((a, b) => Math.abs(a[1].average - 22) - Math.abs(b[1].average - 22))
+              .slice(0, 2)
+              .map(([key]) => key.split("_")[0])
+              .join(", ") || "Data processing"
+          }`
+        : ""
+    }`;
     }
+  }
+
+  checkWeatherRelevance(userMessage, lang) {
+    const message = userMessage.toLowerCase();
+    
+    // Define clearly non-weather keywords that should be redirected
+    const nonWeatherKeywords = [
+      'politics', 'political', 'government', 'election', 'president', 'minister',
+      'economy', 'stock', 'market', 'finance', 'money', 'bitcoin', 'cryptocurrency',
+      'sports', 'football', 'soccer', 'basketball', 'game', 'match', 'player',
+      'programming', 'computer', 'software', 'code', 'website', 'app',
+      'medicine', 'doctor', 'hospital', 'disease', 'health',
+      'recipe', 'cooking', 'restaurant', 'meal', 'food',
+      'movie', 'film', 'music', 'song', 'actor', 'celebrity',
+      'school', 'university', 'homework', 'exam',
+      'religion', 'philosophy', 'history'
+    ];
+
+    const arabicNonWeatherKeywords = [
+      'سياسة', 'سياسي', 'حكومة', 'انتخابات', 'رئيس', 'وزير',
+      'اقتصاد', 'بورصة', 'سوق', 'مالية', 'مال', 'بيتكوين',
+      'رياضة', 'كرة', 'مباراة', 'لعبة', 'فريق', 'لاعب',
+      'برمجة', 'كمبيوتر', 'برنامج', 'كود', 'موقع', 'تطبيق',
+      'طب', 'طبيب', 'مستشفى', 'مرض', 'صحة',
+      'وصفة', 'طبخ', 'مطعم', 'وجبة', 'طعام',
+      'فيلم', 'موسيقى', 'أغنية', 'ممثل', 'مشهور',
+      'مدرسة', 'جامعة', 'واجب', 'امتحان',
+      'دين', 'فلسفة', 'تاريخ'
+    ];
+
+    // Enhanced weather-related keywords including activity-related terms
+    const weatherKeywords = [
+      'weather', 'temperature', 'rain', 'snow', 'wind', 'cloud', 'sun', 'storm',
+      'forecast', 'climate', 'humidity', 'pressure', 'hot', 'cold', 'warm', 'cool',
+      'sunny', 'cloudy', 'rainy', 'snowy', 'windy', 'umbrella', 'coat', 'jacket',
+      'outdoor', 'activity', 'activities', 'trip', 'travel', 'vacation', 'picnic', 'beach',
+      'hiking', 'walking', 'running', 'cycling', 'swimming', 'camping', 'fishing',
+      'best time', 'when', 'where', 'should i go', 'visit', 'destination',
+      'درجة', 'حرارة', 'طقس', 'مطر', 'ثلج', 'رياح', 'غيوم', 'شمس', 'عاصفة',
+      'توقعات', 'مناخ', 'رطوبة', 'ضغط', 'حار', 'بارد', 'دافئ',
+      'مشمس', 'غائم', 'ممطر', 'مثلج', 'عاصف', 'مظلة', 'معطف', 'جاكيت',
+      'خارجي', 'نشاط', 'أنشطة', 'رحلة', 'سفر', 'إجازة', 'نزهة', 'شاطئ',
+      'مشي', 'جري', 'سباحة', 'تخييم', 'صيد', 'أفضل وقت', 'متى', 'أين'
+    ];
+
+    // Activity context keywords that are weather-related
+    const weatherActivityKeywords = [
+      'time for', 'time to', 'when to', 'when should', 'best time',
+      'go outside', 'go out', 'outdoor', 'outside activities',
+      'وقت ل', 'متى', 'أفضل وقت', 'خروج', 'أنشطة خارجية'
+    ];
+
+    // Check if the message contains weather or activity keywords
+    const hasWeatherKeywords = weatherKeywords.some(keyword => message.includes(keyword));
+    const hasActivityKeywords = weatherActivityKeywords.some(keyword => message.includes(keyword));
+
+    // Check if the message contains clearly non-weather keywords
+    const hasNonWeatherKeywords = lang === 'ar' 
+      ? arabicNonWeatherKeywords.some(keyword => message.includes(keyword))
+      : nonWeatherKeywords.some(keyword => message.includes(keyword));
+
+    // Only redirect if it's clearly non-weather AND has no weather/activity context
+    if (hasNonWeatherKeywords && !hasWeatherKeywords && !hasActivityKeywords) {
+      return lang === 'ar' 
+        ? `أنا مساعد ذكي متخصص في الطقس والمناخ! 🌤️
+
+دعنا نتحدث عن:
+• الطقس الحالي والتوقعات ☀️🌧️
+• أفضل الأوقات للأنشطة الخارجية 🚶‍♂️
+• وجهات سفر مناسبة للطقس ✈️
+• نصائح لملابس الطقس 👕🧥
+• مقارنة المناخ التاريخي 📊
+
+ما هي معلومات الطقس التي تريد معرفتها؟`
+        : `I'm a weather specialist! 🌤️
+
+Let's talk about:
+• Current conditions and forecasts ☀️🌧️
+• Best times for outdoor activities 🚶‍♂️
+• Weather-perfect travel destinations ✈️
+• Weather-appropriate clothing tips 👕🧥
+• Historical climate comparisons 📊
+
+What weather information can I help you with?`;
+    }
+
+    // Allow the question to proceed to AI if it seems weather-related or neutral
+    return null;
   }
 
   buildSystemPrompt(lang) {
     if (lang === "ar") {
-      return `أنت مساعد ذكي متخصص في تحليل الطقس والسفر. مهمتك مساعدة المستخدمين في:
+      return `أنت مساعد ذكي متخصص حصرياً في تحليل الطقس والمناخ والسياحة الجوية. مهمتك الوحيدة هي:
 
-المهام الرئيسية:
-1. تحليل بيانات الطقس بدقة وتفصيل
-2. اقتراح أماكن للزيارة بناءً على تفضيلات الطقس
-3. تقديم نصائح للأنشطة المناسبة للطقس الحالي
-4. تحليل الاتجاهات والأنماط في البيانات الجوية
+المهام الحصرية:
+1. تحليل بيانات الطقس بدقة وتفصيل علمي
+2. تفسير أنماط الطقس والاتجاهات المناخية
+3. اقتراح أماكن للزيارة بناءً على تفضيلات الطقس
+4. تقديم نصائح للأنشطة المناسبة للطقس الحالي والمتوقع
+5. تحليل البيانات التاريخية من ناسا ومقارنتها بالأحوال الحالية
 
-خبراتك:
-- خبير في الأرصاد الجوية وتحليل البيانات المناخية
-- متخصص في السياحة المناخية وأفضل أوقات السفر
+خبراتك المتخصصة:
+- خبير أرصاد جوية ومتخصص في علم المناخ
+- محلل بيانات الطقس والاتجاهات الجوية
+- مستشار السياحة المناخية وأفضل أوقات السفر
 - قادر على ربط أنواع الطقس بالأنشطة والوجهات المثالية
-- محلل بيانات ذكي يكتشف الأنماط والتوقعات
 
-تحليل البيانات:
-- فسر البيانات الرقمية (درجات الحرارة، الرطوبة، الأمطار، الرياح)
-- اكتشف الاتجاهات والتغيرات في الطقس
-- قدم تفسيرات علمية مبسطة
-- اربط البيانات بالتجربة العملية
-
-اقتراحات السفر:
-- اقترح وجهات مناسبة للطقس المطلوب
-- اذكر أفضل الأنشطة لكل نوع طقس
-- قدم نصائح للتوقيت المثالي للزيارة
-- اقترح بدائل إذا كان الطقس غير مناسب
+قواعد مهمة جداً:
+- أجب فقط على الأسئلة المتعلقة بالطقس والمناخ والسياحة الجوية
+- إذا سأل المستخدم عن أي موضوع آخر، أعد توجيهه بلطف إلى مواضيع الطقس
+- لا تتحدث عن السياسة أو الأحداث العامة أو أي مواضيع غير جوية
+- ركز على البيانات المقدمة وتحليلها بدقة
 
 أسلوب الرد:
-- استخدم القليل من الرموز التعبيرية فقط عند الضرورة
-- قدم معلومات منظمة وواضحة
-- اربط التحليل بنصائح عملية
-- كن مهنياً ومفيداً
+- استخدم الرموز التعبيرية الجوية فقط (☀️🌧️❄️🌪️💨🌡️)
+- قدم تحليلاً علمياً مبسطاً وواضحاً
+- اربط التحليل بنصائح عملية فورية
+- كن مهنياً ومتخصصاً في الطقس
 - لا تستخدم تنسيق Markdown (مثل ** أو * أو #)
 - استخدم نص عادي فقط
 
 مثال على ردودك:
-"تحليل الطقس: درجة حرارة مثالية 24°م مع رياح خفيفة
+"تحليل الطقس: درجة حرارة مثالية 24°م مع رياح خفيفة 🌤️
+التوقعات: استقرار لـ 6 ساعات قادمة
 أماكن مقترحة: الشواطئ، المتنزهات، الأماكن المفتوحة
-أنشطة مثالية: المشي، التصوير، الرياضات الخارجية"`;
+أنشطة مثالية: المشي، التصوير، الرياضات الخارجية"
+
+تذكر: أنت مساعد طقس متخصص فقط!`;
     } else {
-      return `You are an intelligent weather analysis and travel assistant. Your mission is to help users with:
+      return `You are a specialized AI weather analyst and climate tourism assistant. Your EXCLUSIVE mission is to:
 
-PRIMARY FUNCTIONS:
-1. Analyze weather data in detail with scientific accuracy
-2. Suggest places to visit based on weather preferences
-3. Recommend weather-appropriate activities and destinations
-4. Identify patterns and trends in meteorological data
+EXCLUSIVE FUNCTIONS:
+1. Analyze weather data with scientific precision and detail
+2. Interpret weather patterns and climate trends
+3. Suggest destinations based on specific weather preferences
+4. Recommend weather-appropriate activities and timing
+5. Analyze NASA historical climate data and compare with current conditions
 
-EXPERTISE AREAS:
-- Advanced meteorology and climate data analysis
-- Climate-based tourism and optimal travel timing
-- Matching weather conditions to ideal activities and destinations
-- Smart data analysis that reveals patterns and forecasts
+SPECIALIZED EXPERTISE:
+- Advanced meteorology and atmospheric sciences
+- Climate data analysis and weather pattern recognition
+- Climate-based tourism and optimal travel timing expert
+- Activity-weather matching specialist for all seasons
 
-DATA ANALYSIS APPROACH:
-- Interpret numerical data (temperature, humidity, precipitation, wind)
-- Identify trends and changes in weather patterns
-- Provide simplified scientific explanations
-- Connect data to real-world practical experience
+CRITICAL RULES:
+- ONLY respond to weather, climate, and weather-related travel questions
+- If users ask about non-weather topics, politely redirect to weather matters
+- Do NOT discuss politics, general news, or non-meteorological subjects
+- Focus exclusively on the provided weather data and climate analysis
+- Stay within your weather expertise domain
 
-TRAVEL SUGGESTIONS:
-- Recommend destinations suitable for desired weather conditions
-- Suggest best activities for each weather type
-- Provide optimal timing advice for visits
-- Offer alternatives when weather isn't suitable
+WEATHER-FOCUSED RESPONSE STYLE:
+- Use weather-specific emojis only (☀️🌧️❄️🌪️💨🌡️)
+- Provide scientific but accessible weather analysis
+- Connect analysis to immediate actionable advice
+- Be professional and weather-focused
+- Do NOT use markdown formatting (**, *, #, backticks)
+- Use plain text only for optimal readability
 
-RESPONSE STYLE:
-- Use minimal emojis only when necessary for clarity
-- Provide organized, structured information
-- Connect analysis to actionable advice
-- Be professional, helpful, and engaging
-- Do NOT use markdown formatting (such as **, *, #, or backticks)
-- Use plain text only for better readability
-
-EXAMPLE RESPONSE FORMAT:
-"Weather Analysis: Perfect 24°C with light breeze
+EXAMPLE WEATHER RESPONSE:
+"Weather Analysis: Perfect 24°C with light breeze ☀️
+Forecast: Stable conditions for next 6 hours
 Recommended Places: Beaches, parks, outdoor venues
 Ideal Activities: Walking, photography, outdoor sports
-Trend: Stable conditions for next 6 hours"
+Historical Context: 15% above seasonal average"
 
-SPECIAL FOCUS: When users ask about weather preferences, actively suggest specific types of destinations and activities that match those conditions, not just the current location.`;
+REDIRECT NON-WEATHER QUESTIONS:
+"I'm a weather specialist! Let's talk about the current conditions, forecasts, or weather-perfect destinations instead. What weather information can I help you with?"
+
+Remember: You are EXCLUSIVELY a weather and climate assistant!`;
     }
   }
 

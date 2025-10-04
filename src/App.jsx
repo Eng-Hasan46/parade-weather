@@ -21,15 +21,50 @@ export default function App() {
 
   const nasaPowerService = useMemo(() => new NASAPowerService(), []);
 
-  function checkParadeWeather() {
+  async function checkParadeWeather() {
     if (!place) {
       setShowLocationAlert(true);
       setTimeout(() => setShowLocationAlert(false), 8000);
       return;
     }
-    const resultsSection = document.querySelector('.card');
-    if (resultsSection) {
-      resultsSection.scrollIntoView({ behavior: 'smooth' });
+    
+    // Show loading state and refresh data
+    setLoading(true);
+    try {
+      // Refetch weather data to get latest information
+      const f = await getForecast(place.lat, place.lon);
+      setData(f);
+      
+      // Recalculate weather summary
+      const h = f.hourly, idx = h.time.reduce((a, t, i) => { if (t.startsWith(date)) a.push(i); return a; }, []);
+      const tIdx = idx.find(i => h.time[i].endsWith("12:00")) ?? (idx.length ? idx[Math.floor(idx.length / 2)] : null);
+      if (tIdx != null) {
+        const pop = h.precipitation_probability[tIdx] ?? 0, uv = h.uv_index[tIdx] ?? 0;
+        const temp = h.temperature_2m[tIdx] ?? 0, app = h.apparent_temperature[tIdx] ?? temp;
+        const wind = h.wind_speed_10m[tIdx] ?? 0;
+        setSum(verdict({ pop, uv, apparentC: heatIndexC(temp, 60), wind }));
+      }
+      
+      // Refresh NASA data as well
+      try {
+        const selectedDate = new Date(date);
+        const nasaResult = await nasaPowerService.getAnnualAverageData(place.lat, place.lon, selectedDate);
+        setNasaData(nasaResult);
+      } catch (error) {
+        console.error('Failed to refresh NASA data:', error);
+      }
+      
+      // Scroll to results after data is loaded
+      setTimeout(() => {
+        const resultsSection = document.querySelector('.card');
+        if (resultsSection) {
+          resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    } catch (error) {
+      console.error('Failed to refresh weather data:', error);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -55,6 +90,14 @@ export default function App() {
         console.error('Failed to fetch NASA data:', error);
         setNasaData(null);
       }
+      
+      // Scroll to results after data is loaded
+      setTimeout(() => {
+        const resultsSection = document.querySelector('.card');
+        if (resultsSection) {
+          resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
     } finally { setLoading(false); }
   }
 
@@ -142,12 +185,40 @@ export default function App() {
       {place && (
         <div className="card p-5 mb-6">
           <div className="text-white/80 text-sm">{place.name}</div>
-          <div className="text-3xl mt-2">{sum ? `${sum.icon} ${lang === 'ar' ? sum.ar : sum.en}` : (loading ? '…' : '')}</div>
+          <div className="text-3xl mt-2">
+            {loading ? (
+              <div className="flex items-center gap-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-400"></div>
+                <span className="text-lg text-white/80">
+                  {lang === 'ar' ? 'جاري تحديث البيانات...' : 'Refreshing data...'}
+                </span>
+              </div>
+            ) : sum ? (
+              <div>
+                <div className="mb-2">{`${sum.icon} ${lang === 'ar' ? sum.ar : sum.en}`}</div>
+                {sum.icon === '🙂' ? (
+                  <div className="text-lg text-green-400 font-medium animate-in fade-in duration-500">
+                    ✨ {lang === 'ar' ? 'استمتع بحدثك!' : 'Perfect for your event!'}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              ''
+            )}
+          </div>
         </div>
       )}
 
       {place && nasaData && (
-        <div className="card p-6 mb-6">
+        <div className="card p-6 mb-6 relative">
+          {loading && (
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
+              <div className="flex items-center gap-3 text-white">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-sky-400"></div>
+                <span>{lang === 'ar' ? 'جاري تحديث البيانات المناخية...' : 'Updating climate data...'}</span>
+              </div>
+            </div>
+          )}
           <div className="mb-4">
             <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
               🛰️ {lang === 'ar' ? 'البيانات المناخية التاريخية' : 'Historical Climate Data'}
@@ -454,6 +525,7 @@ export default function App() {
       <WeatherChatbot
         weatherData={data}
         currentPlace={place}
+        nasaData={nasaData}
         lang={lang}
       />
 

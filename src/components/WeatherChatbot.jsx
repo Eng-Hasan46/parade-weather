@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import GeminiAIService from '../lib/geminiAI.js';
 import { config } from '../config.js';
 
-export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' }) {
+export default function WeatherChatbot({ weatherData, currentPlace, nasaData, lang = 'en' }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isMaximized, setIsMaximized] = useState(false);
     const [messages, setMessages] = useState([]);
@@ -49,8 +49,8 @@ export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' 
                 id: Date.now(),
                 type: 'bot',
                 content: lang === 'ar'
-                    ? 'مرحباً! أنا مساعد الطقس والسفر الذكي.\n\nيمكنني مساعدتك في:\n• تحليل بيانات الطقس بالتفصيل\n• اقتراح أماكن للزيارة حسب الطقس المفضل\n• التوصية بأفضل الأنشطة للطقس الحالي\n• اكتشاف الأنماط والاتجاهات الجوية\n\nنصيحة: إذا كانت الخدمة مزدحمة، سأقدم لك تحليلاً سريعاً ويمكنك المحاولة مرة أخرى للحصول على تحليل مفصل.\n\nجرب أن تسأل: "أين يمكنني الذهاب في طقس مشمس؟" أو "حلل لي بيانات الطقس الحالية"'
-                    : 'Hello! I\'m your intelligent weather & travel assistant.\n\nI can help you with:\n• Detailed weather data analysis\n• Suggest places to visit based on your weather preferences\n• Recommend best activities for current conditions\n• Identify weather patterns and trends\n\nTry asking: "Where can I go for sunny weather?" or "Analyze the current weather data for me"',
+                    ? 'مرحباً! 🌤️ أنا خبير الطقس والمناخ الذكي\n\nأتخصص حصرياً في:\n• تحليل الطقس الحالي والتوقعات 📊\n• مقارنة البيانات مع المناخ التاريخي (ناسا) 📈\n• اقتراح وجهات سفر مناسبة للطقس المطلوب ✈️\n• توصيات الأنشطة الخارجية حسب الظروف الجوية 🏃‍♂️\n• نصائح ملابس وتوقيت مثالي للخروج 👕\n• تحليل أنماط الطقس والاتجاهات المناخية 🌡️\n\nملاحظة مهمة: أركز فقط على مواضيع الطقس والمناخ\n\nجرب السؤال:\n"حلل لي الطقس الحالي"\n"أين أذهب في طقس مشمس؟"\n"قارن الطقس اليوم مع المعدل التاريخي"\n"متى أفضل وقت للنشاطات الخارجية؟"'
+                    : 'Hello! 🌤️ I\'m your dedicated Weather & Climate Expert\n\nI specialize exclusively in:\n• Current weather analysis & forecasts 📊\n• Historical climate comparisons (NASA data) 📈\n• Weather-perfect travel destination suggestions ✈️\n• Outdoor activity recommendations by conditions 🏃‍♂️\n• Clothing tips & optimal timing advice 👕\n• Weather pattern & climate trend analysis 🌡️\n\nImportant: I focus only on weather and climate topics\n\nTry asking:\n"Analyze the current weather for me"\n"Where should I go for sunny weather?"\n"Compare today\'s weather to historical averages"\n"When\'s the best time for outdoor activities?"',
                 timestamp: new Date()
             };
             setMessages([welcomeMessage]);
@@ -96,7 +96,8 @@ export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' 
                 currentPlace,
                 lang,
                 0,
-                includeNASAData
+                includeNASAData,
+                nasaData
             );
 
             const botMessage = {
