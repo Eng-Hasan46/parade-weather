@@ -128,7 +128,7 @@ export default function App() {
           <div className="flex items-center gap-3 text-center justify-center">
             <span className="text-2xl">📍</span>
             <span className="text-white font-medium">
-              {lang === 'ar' 
+              {lang === 'ar'
                 ? 'يرجى اختيار موقع الحدث أولاً لفحص طقس الاستعراض!'
                 : 'Please choose an event location first to check your parade weather!'}
             </span>
