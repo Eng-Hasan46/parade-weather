@@ -45,7 +45,7 @@ export default function App() {
         const wind = h.wind_speed_10m[tIdx] ?? 0;
         setSum(verdict({ pop, uv, apparentC: heatIndexC(temp, 60), wind }));
       }
-      
+
       // Fetch NASA POWER data
       try {
         const selectedDate = new Date(date);
