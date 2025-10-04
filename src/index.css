@@ -47,3 +47,21 @@ body {
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
 }
+.card{ background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; backdrop-filter: blur(6px); }
+.badge{ background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 999px; font-size: 12px; }
+.map-dark .leaflet-control-attribution { color: #bbb; }
+.map-dark .leaflet-control-zoom a { background: rgba(30,30,30,.9); color: #eee; }
+
+.card{ background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; backdrop-filter: blur(6px); }
+.badge{ background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 999px; font-size: 12px; }
+
+.map-dark .leaflet-control-attribution { color: #bbb; }
+.map-dark .leaflet-control-zoom a { background: rgba(30,30,30,.9); color: #eee; }
+.leaflet-container { background: transparent !important; }
+
+/* Make rain colors stand out over any basemap */
+.rv-tiles img,
+.gibs-tiles img{
+  mix-blend-mode: multiply;   /* boosts color without hiding labels */
+  image-rendering: auto;
+}
