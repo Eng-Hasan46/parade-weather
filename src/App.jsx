@@ -71,7 +71,7 @@ export default function App() {
     // Clear previous NASA data and verdict before starting new check
     setNasaData(null);
     setSum(null);
-    
+
     // Enable scrolling only for this function
     setShouldScroll(true);
 
