@@ -1,166 +1,253 @@
-import { Fragment, useState } from "react";
-import { Listbox, Transition } from "@headlessui/react";
+import { useEffect, useRef, useState } from "react";
 import { geocodeCity } from "../lib/weather";
 
-// icon
+// Small debounce hook
+function useDebounced(value, delay = 300) {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return v;
+}
+
+// Icon
 const Pin = () => (
   <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" className="opacity-80">
     <path d="M12 22s8-7.58 8-12a8 8 0 1 0-16 0c0 4.42 8 12 8 12Zm0-9a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"/>
   </svg>
 );
 
-// time options with colors
-const TIME_OPTIONS = [
-  { label: "Morning (6AM–12PM)",  dot: "bg-emerald-400",  text: "text-emerald-300" },
-  { label: "Afternoon (12–6PM)",  dot: "bg-yellow-400",   text: "text-yellow-300" },
-  { label: "Evening (6–10PM)",    dot: "bg-orange-400",   text: "text-orange-300" },
-  { label: "Night (10PM–6AM)",    dot: "bg-purple-400",   text: "text-purple-300" },
-];
+export default function SearchForm({
+  lang = "en",
+  labels,
+  onPick,            // function(place) -> set place in parent
+  date,
+  setDate,
+  onCheck,          // optional callback before scrolling
+  scrollTargetId = "results", // anchor to scroll to on Check
+}) {
+  const [q, setQ] = useState("");
+  const [list, setList] = useState([]);
+  const [busy, setBusy] = useState(false);        // searching suggestions
+  const [geoBusy, setGeoBusy] = useState(false);  // using geolocation
+  const [checking, setChecking] = useState(false);// pressing Check
+  const [error, setError] = useState("");
 
-export default function SearchForm({ lang='en', labels, onPick, date, setDate, time, setTime }){
-  const [q,setQ]=useState("");
-  const [list,setList]=useState([]);
-  const [busy,setBusy]=useState(false);
+  const dq = useDebounced(q);
+  const inputWrapRef = useRef(null);
 
-  async function search(){
-    setBusy(true);
-    try { setList(await geocodeCity(q, lang)); }
-    finally { setBusy(false); }
+  // Live suggestions (debounced)
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      setError("");
+      if (!dq.trim()) { setList([]); return; }
+      setBusy(true);
+      try {
+        const res = await geocodeCity(dq.trim(), lang);
+        if (!cancel) setList(res || []);
+      } catch (e) {
+        if (!cancel) setError(lang === "ar" ? "حدث خطأ أثناء البحث" : "Search failed");
+      } finally {
+        if (!cancel) setBusy(false);
+      }
+    })();
+    return () => { cancel = true; };
+  }, [dq, lang]);
+
+  // Pick a suggestion
+  function pickPlace(p) {
+    setList([]);
+    setQ(p.name || "");
+    onPick?.(p);
   }
 
-  function myLoc(){
-    if(!navigator.geolocation){
-      alert(lang==='ar'?'ميزة تحديد الموقع غير مدعومة':'Geolocation not supported');
+  // Use my location (with loading)
+  function myLoc() {
+    if (!navigator.geolocation) {
+      alert(lang === "ar" ? "ميزة تحديد الموقع غير مدعومة" : "Geolocation not supported");
       return;
     }
-    navigator.geolocation.getCurrentPosition(pos=>{
-      onPick({ name: lang==='ar'?'موقعي الحالي':'My location', lat: pos.coords.latitude, lon: pos.coords.longitude });
-    }, ()=> alert(lang==='ar'?'تعذر الحصول على الموقع':'Unable to get location'));
+    setGeoBusy(true);
+    setError("");
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setGeoBusy(false);
+        pickPlace({
+          name: lang === "ar" ? "موقعي الحالي" : "My location",
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+        });
+      },
+      () => {
+        setGeoBusy(false);
+        setError(lang === "ar" ? "تعذر الحصول على الموقع" : "Unable to get location");
+      }
+    );
   }
 
-  const selectedTime = time || TIME_OPTIONS[0].label;
+  // Press Check -> optional callback -> smooth scroll to anchor
+  async function handleCheck() {
+    try {
+      setChecking(true);
+      await onCheck?.(); // if parent returns a promise, we await it
+      const el = document.getElementById(scrollTargetId);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    } finally {
+      setChecking(false);
+    }
+  }
 
   return (
-    <div className="card p-5">
-      {/* 12-col grid: each control in its own lane */}
+    <div
+      className="
+        rounded-2xl p-5 md:p-6 shadow-xl
+        bg-slate-900/60 backdrop-blur
+        ring-1 ring-white/10
+      "
+      role="search"
+      aria-label={lang === "ar" ? "نموذج البحث" : "Search form"}
+    >
+      {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
-
-        {/* Location (col-span-5) */}
-        <div className="md:col-span-5">
+        {/* Location */}
+        <div className="md:col-span-7">
           <div className="text-white/80 text-sm mb-1 flex items-center gap-2">
-            <Pin/>{labels.location}
+            <Pin /> {labels.location}
           </div>
 
-          {/* input + buttons stay together; never wrap into other columns */}
-          <div className="flex items-stretch gap-2">
+          <div className="relative flex items-stretch gap-2" ref={inputWrapRef}>
             <input
-              className="input flex-1 min-w-0"
+              className="input flex-1 min-w-0 pr-10"
               placeholder="Manama, Bahrain"
               value={q}
-              onChange={e=>setQ(e.target.value)}
+              onChange={(e) => setQ(e.target.value)}
+              onFocus={() => q.trim() && setList((l) => l)} // re-show dropdown on focus if q exists
+              aria-autocomplete="list"
+              aria-expanded={!!list.length}
             />
+
+            {/* Clear text */}
+            {q && (
+              <button
+                onClick={() => { setQ(""); setList([]); }}
+                className="absolute right-[11.5rem] md:right-[13rem] top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
+                aria-label={lang==='ar'?'مسح النص':'Clear'}
+              >
+                ×
+              </button>
+            )}
+
+            {/* Search button */}
             <button
-              onClick={search}
-              className="shrink-0 rounded-full px-5 py-3 bg-ocean-600 hover:bg-ocean-700 text-white"
+              onClick={() => dq.trim() && setQ(dq)} // no-op; suggestions are already live
+              disabled={busy}
+              className={`
+                px-6 py-3 rounded-full font-medium text-white transition-all
+                whitespace-nowrap
+                ${busy ? "bg-sky-800 cursor-not-allowed" :
+                  "bg-gradient-to-r from-sky-500 to-sky-700 hover:from-sky-400 hover:to-sky-600"}
+                shadow-md hover:shadow-lg focus:ring-2 focus:ring-sky-400 focus:outline-none
+              `}
+              title={lang === "ar" ? "بحث" : "Search"}
             >
-              {busy ? (lang==='ar'?'...':'Search…') : (lang==='ar'?'بحث':'Search')}
+              {busy ? (
+                <span className="flex items-center gap-2">
+                  <span className="inline-block w-4 h-4 border-2 border-white/60 border-t-transparent rounded-full animate-spin" />
+                  {lang === "ar" ? "جارٍ البحث" : "Searching..."}
+                </span>
+              ) : (
+                lang === "ar" ? "بحث" : "Search"
+              )}
             </button>
+
+            {/* Use My Location (bigger) */}
             <button
               onClick={myLoc}
-              className="shrink-0 rounded-full px-5 py-3 bg-white/10 hover:bg-white/20 text-white"
+              disabled={geoBusy}
+              className={`
+                px-6 py-3 rounded-full font-medium text-white transition-all
+                whitespace-nowrap
+                ${geoBusy ? "bg-slate-800 cursor-not-allowed" :
+                  "bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600"}
+                shadow-md hover:shadow-lg focus:ring-2 focus:ring-emerald-400 focus:outline-none
+              `}
+              title={lang === "ar" ? "استخدم موقعي" : "Use My Location"}
             >
-              {lang==='ar'?'موقعي':'Use'}
+              {geoBusy ? (
+                <span className="flex items-center gap-2">
+                  <span className="inline-block w-4 h-4 border-2 border-white/70 border-t-transparent rounded-full animate-spin" />
+                  {lang === "ar" ? "جارٍ..." : "Locating..."}
+                </span>
+              ) : (
+                lang === "ar" ? "استخدم موقعي" : "Use My Location"
+              )}
             </button>
+
+            {/* Suggestions dropdown */}
+            {list.length > 0 && (
+              <div
+                className="
+                  absolute left-0 right-0 top-full mt-2 z-50
+                  max-h-60 overflow-y-auto rounded-xl
+                  bg-slate-900/90 ring-1 ring-white/10 shadow-2xl
+                "
+                role="listbox"
+              >
+                {list.map((p) => (
+                  <button
+                    key={`${p.lat},${p.lon}`}
+                    role="option"
+                    onClick={() => pickPlace(p)}
+                    className="w-full px-4 py-2 text-left hover:bg-slate-800/60 transition"
+                    title={`${p.lat}, ${p.lon}`}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* suggestions */}
-          {list.length>0 && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {list.map(p=> (
-                <button
-                  key={`${p.lat},${p.lon}`}
-                  onClick={()=>onPick(p)}
-                  className="badge hover:bg-white/20"
-                >
-                  {p.name}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Error */}
+          {error && <div className="mt-2 text-sm text-rose-300">{error}</div>}
         </div>
 
-        {/* Date (col-span-4) */}
-        <div className="md:col-span-4">
+        {/* Date */}
+        <div className="md:col-span-5">
           <div className="text-white/80 text-sm mb-1">📅 {labels.date}</div>
           <input
             type="date"
             className="input w-full"
             value={date}
-            onChange={e=>setDate(e.target.value)}
+            onChange={(e) => setDate(e.target.value)}
           />
-        </div>
-
-        {/* Time (col-span-3) — Headless UI Listbox for full styling control */}
-        <div className="md:col-span-3">
-          <div className="text-white/80 text-sm mb-1">⏰ {labels.time}</div>
-
-          <Listbox value={selectedTime} onChange={setTime}>
-            <div className="relative">
-              {/* Trigger button looks like your inputs */}
-              <Listbox.Button className="input w-full flex items-center justify-between">
-                <span className="truncate">{selectedTime}</span>
-                <svg width="18" height="18" viewBox="0 0 24 24" className="opacity-80">
-                  <path fill="currentColor" d="M7 10l5 5 5-5H7z"/>
-                </svg>
-              </Listbox.Button>
-
-              {/* Dropdown panel */}
-              <Transition
-                as={Fragment}
-                enter="transition ease-out duration-100"
-                enterFrom="opacity-0 translate-y-1"
-                enterTo="opacity-100 translate-y-0"
-                leave="transition ease-in duration-75"
-                leaveFrom="opacity-100 translate-y-0"
-                leaveTo="opacity-0 translate-y-1"
-              >
-                <Listbox.Options
-                  className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl bg-slate-900/95 ring-1 ring-white/10 shadow-xl focus:outline-none"
-                >
-                  {TIME_OPTIONS.map((t) => (
-                    <Listbox.Option
-                      key={t.label}
-                      value={t.label}
-                      className={({ active, selected }) =>
-                        `px-4 py-2 cursor-pointer select-none flex items-center gap-2
-                         ${active ? "bg-slate-700/70" : ""}
-                         ${selected ? "bg-slate-800/70" : ""}`
-                      }
-                    >
-                      {({ selected }) => (
-                        <>
-                          <span className={`inline-block h-2.5 w-2.5 rounded-full ${t.dot}`} />
-                          <span className={`truncate ${t.text}`}>{t.label}</span>
-                          {selected && (
-                            <svg width="18" height="18" viewBox="0 0 24 24" className="ml-auto text-sky-300">
-                              <path fill="currentColor" d="M9 16.2l-3.5-3.5 1.4-1.4L9 13.4l7.1-7.1 1.4 1.4z"/>
-                            </svg>
-                          )}
-                        </>
-                      )}
-                    </Listbox.Option>
-                  ))}
-                </Listbox.Options>
-              </Transition>
-            </div>
-          </Listbox>
         </div>
       </div>
 
-      {/* CTA */}
-      <div className="mt-5 flex justify-center">
-        <button className="cta text-lg flex items-center gap-2">
-          ☔ {labels.check}
+      {/* Check CTA */}
+      <div className="mt-6 flex justify-center">
+        <button
+          onClick={handleCheck}
+          disabled={checking}
+          className={`
+            px-10 py-3 rounded-full text-lg font-semibold flex items-center gap-2
+            text-white transition-all
+            ${checking
+              ? "bg-indigo-800 cursor-wait"
+              : "bg-gradient-to-r from-blue-500 to-indigo-700 hover:from-blue-400 hover:to-indigo-600 shadow-lg hover:shadow-xl"}
+            focus:ring-2 focus:ring-indigo-400 focus:outline-none
+          `}
+        >
+          {checking ? (
+            <>
+              <span className="inline-block w-5 h-5 border-2 border-white/70 border-t-transparent rounded-full animate-spin" />
+              {lang === "ar" ? "جارٍ التحميل..." : "Loading results..."}
+            </>
+          ) : (
+            <>☔ {labels.check}</>
+          )}
         </button>
       </div>
     </div>
