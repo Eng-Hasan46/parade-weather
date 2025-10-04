@@ -45,7 +45,7 @@ export default function App() {
   // Component to render verdict icon
   const VerdictIcon = ({ iconName }) => {
     const iconProps = { size: 32, className: "inline mr-2" };
-    switch(iconName) {
+    switch (iconName) {
       case 'CloudDrizzle': return <CloudDrizzle {...iconProps} className="inline mr-2 text-blue-400" />;
       case 'CloudRain': return <CloudRain {...iconProps} className="inline mr-2 text-blue-500" />;
       case 'Cloud': return <Cloud {...iconProps} className="inline mr-2 text-gray-400" />;
