@@ -49,7 +49,7 @@ export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' 
                 type: 'bot',
                 content: lang === 'ar'
                     ? 'مرحباً! أنا مساعد الطقس والسفر الذكي.\n\nيمكنني مساعدتك في:\n• تحليل بيانات الطقس بالتفصيل\n• اقتراح أماكن للزيارة حسب الطقس المفضل\n• التوصية بأفضل الأنشطة للطقس الحالي\n• اكتشاف الأنماط والاتجاهات الجوية\n\nنصيحة: إذا كانت الخدمة مزدحمة، سأقدم لك تحليلاً سريعاً ويمكنك المحاولة مرة أخرى للحصول على تحليل مفصل.\n\nجرب أن تسأل: "أين يمكنني الذهاب في طقس مشمس؟" أو "حلل لي بيانات الطقس الحالية"'
-                    : 'Hello! I\'m your intelligent weather & travel assistant.\n\nI can help you with:\n• Detailed weather data analysis\n• Suggest places to visit based on your weather preferences\n• Recommend best activities for current conditions\n• Identify weather patterns and trends\n\nTip: If the AI service is busy, I\'ll provide a quick summary and you can try again for detailed analysis.\n\nTry asking: "Where can I go for sunny weather?" or "Analyze the current weather data for me"',
+                    : 'Hello! I\'m your intelligent weather & travel assistant.\n\nI can help you with:\n• Detailed weather data analysis\n• Suggest places to visit based on your weather preferences\n• Recommend best activities for current conditions\n• Identify weather patterns and trends\n\nTry asking: "Where can I go for sunny weather?" or "Analyze the current weather data for me"',
                 timestamp: new Date()
             };
             setMessages([welcomeMessage]);
