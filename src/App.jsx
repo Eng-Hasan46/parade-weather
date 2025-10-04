@@ -39,6 +39,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [nasaLoading, setNasaLoading] = useState(false);
   const [showLocationAlert, setShowLocationAlert] = useState(false);
+  const [shouldScroll, setShouldScroll] = useState(false);
 
   const nasaPowerService = useMemo(() => new NASAPowerService(), []);
 
@@ -67,7 +68,14 @@ export default function App() {
       return;
     }
 
-    // Scroll to map section first (always exists)
+    // Clear previous NASA data and verdict before starting new check
+    setNasaData(null);
+    setSum(null);
+    
+    // Enable scrolling only for this function
+    setShouldScroll(true);
+
+    // Scroll to map section first (always exists) - only when clicking Check My Parade
     const mapSection = document.querySelector('.my-6');
     if (mapSection) {
       mapSection.scrollIntoView({ behavior: 'smooth' });
@@ -94,9 +102,12 @@ export default function App() {
 
       // After data loads, scroll to the data section
       setTimeout(() => {
-        const dataSection = document.querySelector('#data');
-        if (dataSection) {
-          dataSection.scrollIntoView({ behavior: 'smooth' });
+        if (shouldScroll) {
+          const dataSection = document.querySelector('#data');
+          if (dataSection) {
+            dataSection.scrollIntoView({ behavior: 'smooth' });
+          }
+          setShouldScroll(false); // Reset scroll flag
         }
       }, 100);
     } catch (error) {
