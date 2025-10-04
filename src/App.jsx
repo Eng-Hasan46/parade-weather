@@ -81,24 +81,24 @@ export default function App() {
       mapSection.scrollIntoView({ behavior: 'smooth' });
     }
 
-    // Calculate verdict based on current weather data
-    if (data) {
-      const h = data.hourly, idx = h.time.reduce((a, t, i) => { if (t.startsWith(date)) a.push(i); return a; }, []);
-      const tIdx = idx.find(i => h.time[i].endsWith("12:00")) ?? (idx.length ? idx[Math.floor(idx.length / 2)] : null);
-      if (tIdx != null) {
-        const pop = h.precipitation_probability[tIdx] ?? 0;
-        const temp = h.temperature_2m[tIdx] ?? 0, app = h.apparent_temperature[tIdx] ?? temp;
-        const wind = h.wind_speed_10m[tIdx] ?? 0;
-        setSum(verdict({ pop, apparentC: heatIndexC(temp, 60), wind }));
-      }
-    }
-
     // Fetch NASA POWER data
     setNasaLoading(true);
     try {
       const selectedDate = new Date(date);
       const nasaResult = await nasaPowerService.getAnnualAverageData(place.lat, place.lon, selectedDate);
       setNasaData(nasaResult);
+
+      // Calculate verdict based on current weather data AFTER NASA data loads
+      if (data) {
+        const h = data.hourly, idx = h.time.reduce((a, t, i) => { if (t.startsWith(date)) a.push(i); return a; }, []);
+        const tIdx = idx.find(i => h.time[i].endsWith("12:00")) ?? (idx.length ? idx[Math.floor(idx.length / 2)] : null);
+        if (tIdx != null) {
+          const pop = h.precipitation_probability[tIdx] ?? 0;
+          const temp = h.temperature_2m[tIdx] ?? 0, app = h.apparent_temperature[tIdx] ?? temp;
+          const wind = h.wind_speed_10m[tIdx] ?? 0;
+          setSum(verdict({ pop, apparentC: heatIndexC(temp, 60), wind }));
+        }
+      }
 
       // After data loads, scroll to the data section
       setTimeout(() => {
