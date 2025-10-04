@@ -460,6 +460,7 @@ export default function App() {
       <WeatherChatbot
         weatherData={data}
         currentPlace={place}
+        nasaData={nasaData}
         lang={lang}
       />
 
