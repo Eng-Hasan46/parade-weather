@@ -18,8 +18,22 @@ export default function App() {
   const [nasaData, setNasaData] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showLocationAlert, setShowLocationAlert] = useState(false);
 
   const nasaPowerService = useMemo(() => new NASAPowerService(), []);
+
+  function checkParadeWeather() {
+    if (!place) {
+      setShowLocationAlert(true);
+      setTimeout(() => setShowLocationAlert(false), 8000); // Hide after 8 seconds
+      return;
+    }
+    // If location is selected, scroll to results
+    const resultsSection = document.querySelector('.card');
+    if (resultsSection) {
+      resultsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
 
   async function onPick(p) {
     setPlace(p); setLoading(true);
@@ -34,16 +48,7 @@ export default function App() {
         const wind = h.wind_speed_10m[tIdx] ?? 0;
         setSum(verdict({ pop, uv, apparentC: heatIndexC(temp, 60), wind }));
       }
-
-      // Fetch NASA historical data for this date
-      try {
-        const selectedDate = new Date(date);
-        const nasaResult = await nasaPowerService.getAnnualAverageData(p.lat, p.lon, selectedDate);
-        setNasaData(nasaResult);
-      } catch (error) {
-        console.error('Failed to fetch NASA data:', error);
-        setNasaData(null);
-      }
+      // NASA data will be fetched by useEffect hook when place changes
     } finally { setLoading(false); }
   }
 
@@ -55,10 +60,10 @@ export default function App() {
     return { temp: h.temperature_2m[t], pop: h.precipitation_probability[t], uv: h.uv_index[t], wind: h.wind_speed_10m[t] };
   }, [data, date]);
 
-  // Refresh NASA data when date changes
+  // Refresh NASA data when date changes with debouncing
   useEffect(() => {
     if (place && date) {
-      const fetchNASAData = async () => {
+      const timeoutId = setTimeout(async () => {
         try {
           const selectedDate = new Date(date);
           const nasaResult = await nasaPowerService.getAnnualAverageData(place.lat, place.lon, selectedDate);
@@ -67,8 +72,9 @@ export default function App() {
           console.error('Failed to fetch NASA data for date change:', error);
           setNasaData(null);
         }
-      };
-      fetchNASAData();
+      }, 300); // 300ms debounce to reduce API calls
+
+      return () => clearTimeout(timeoutId);
     }
   }, [date, place, nasaPowerService]);
 
@@ -105,6 +111,7 @@ export default function App() {
             lang={lang}
             labels={L}
             onPick={onPick}
+            onCheck={checkParadeWeather}
             date={date}
             setDate={setDate}
             time={time}
@@ -114,6 +121,20 @@ export default function App() {
 
 
       </HeroGlobe>
+
+      {/* Location Alert */}
+      {showLocationAlert && (
+        <div className="mb-4 p-4 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-400/30 rounded-xl backdrop-blur-sm animate-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-3 text-center justify-center">
+            <span className="text-2xl">📍</span>
+            <span className="text-white font-medium">
+              {lang === 'ar' 
+                ? 'يرجى اختيار موقع الحدث أولاً لفحص طقس الاستعراض!'
+                : 'Please choose an event location first to check your parade weather!'}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* === MAP + RESULTS === */}
       <div className="my-6"><MapPicker point={place} onPick={onPick} /></div>
@@ -134,8 +155,8 @@ export default function App() {
             </h3>
             <p className="text-white/70 text-sm">
               {lang === 'ar'
-                ? `📅 ${new Date(date).toLocaleDateString('ar')} • البيانات من ${nasaData.location.startYear}-${nasaData.location.endYear} (${nasaData.location.yearsOfData} سنة)`
-                : `📅 ${new Date(date).toLocaleDateString()} • Data from ${nasaData.location.startYear}-${nasaData.location.endYear} (${nasaData.location.yearsOfData} years)`
+                ? `📅 ${new Date(date).toLocaleDateString('ar-u-nu-arab-ca-gregory', { day: 'numeric', month: 'long', year: 'numeric' })} • البيانات من ${nasaData.location.startYear}-${nasaData.location.endYear} (${nasaData.location.yearsOfData} سنة)`
+                : `📅 ${new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} • Data from ${nasaData.location.startYear}-${nasaData.location.endYear} (${nasaData.location.yearsOfData} years)`
               }
             </p>
           </div>

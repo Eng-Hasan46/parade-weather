@@ -17,7 +17,7 @@ const TIME_OPTIONS = [
   { label: "Night (10PM–6AM)",    dot: "bg-purple-400",   text: "text-purple-300" },
 ];
 
-export default function SearchForm({ lang='en', labels, onPick, date, setDate, time, setTime }){
+export default function SearchForm({ lang='en', labels, onPick, onCheck, date, setDate, time, setTime }){
   const [q,setQ]=useState("");
   const [list,setList]=useState([]);
   const [busy,setBusy]=useState(false);
@@ -159,7 +159,7 @@ export default function SearchForm({ lang='en', labels, onPick, date, setDate, t
 
       {/* CTA */}
       <div className="mt-5 flex justify-center">
-        <button className="cta text-lg flex items-center gap-2">
+        <button onClick={onCheck} className="cta text-lg flex items-center gap-2">
           ☔ {labels.check}
         </button>
       </div>
