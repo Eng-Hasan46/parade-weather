@@ -1,4 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  CloudRain,
+  Thermometer,
+  Cloud,
+  Snowflake,
+  Wind,
+  Droplets,
+  Satellite,
+  Umbrella,
+  MapPin,
+  Calendar,
+  Globe,
+  TriangleAlert,
+  RotateCcw
+} from "lucide-react";
 import MapPicker from "./components/MapPicker.jsx";
 import SearchForm from "./components/SearchForm.jsx";
 import HeroGlobe from "./components/HeroGlobe.jsx";
@@ -17,24 +32,50 @@ export default function App() {
   const [nasaData, setNasaData] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [nasaLoading, setNasaLoading] = useState(false);
   const [showLocationAlert, setShowLocationAlert] = useState(false);
 
   const nasaPowerService = useMemo(() => new NASAPowerService(), []);
 
-  function checkParadeWeather() {
+  async function checkParadeWeather() {
     if (!place) {
       setShowLocationAlert(true);
       setTimeout(() => setShowLocationAlert(false), 8000);
       return;
     }
-    const resultsSection = document.querySelector('.card');
-    if (resultsSection) {
-      resultsSection.scrollIntoView({ behavior: 'smooth' });
+
+    // Scroll to map section first (always exists)
+    const mapSection = document.querySelector('.my-6');
+    if (mapSection) {
+      mapSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Fetch NASA POWER data
+    setNasaLoading(true);
+    try {
+      const selectedDate = new Date(date);
+      const nasaResult = await nasaPowerService.getAnnualAverageData(place.lat, place.lon, selectedDate);
+      setNasaData(nasaResult);
+
+      // After data loads, scroll to the data section
+      setTimeout(() => {
+        const dataSection = document.querySelector('#data');
+        if (dataSection) {
+          dataSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    } catch (error) {
+      console.error('Failed to fetch NASA data:', error);
+      setNasaData(null);
+    } finally {
+      setNasaLoading(false);
     }
   }
 
   async function onPick(p) {
     setPlace(p); setLoading(true);
+    // Clear previous NASA data when selecting new location
+    setNasaData(null);
     try {
       const f = await getForecast(p.lat, p.lon); setData(f);
       const h = f.hourly, idx = h.time.reduce((a, t, i) => { if (t.startsWith(date)) a.push(i); return a; }, []);
@@ -44,16 +85,6 @@ export default function App() {
         const temp = h.temperature_2m[tIdx] ?? 0, app = h.apparent_temperature[tIdx] ?? temp;
         const wind = h.wind_speed_10m[tIdx] ?? 0;
         setSum(verdict({ pop, uv, apparentC: heatIndexC(temp, 60), wind }));
-      }
-
-      // Fetch NASA POWER data
-      try {
-        const selectedDate = new Date(date);
-        const nasaResult = await nasaPowerService.getAnnualAverageData(p.lat, p.lon, selectedDate);
-        setNasaData(nasaResult);
-      } catch (error) {
-        console.error('Failed to fetch NASA data:', error);
-        setNasaData(null);
       }
     } finally { setLoading(false); }
   }
@@ -66,29 +97,12 @@ export default function App() {
     return { temp: h.temperature_2m[t], pop: h.precipitation_probability[t], uv: h.uv_index[t], wind: h.wind_speed_10m[t] };
   }, [data, date]);
 
-  useEffect(() => {
-    if (place && date) {
-      const timeoutId = setTimeout(async () => {
-        try {
-          const selectedDate = new Date(date);
-          const nasaResult = await nasaPowerService.getAnnualAverageData(place.lat, place.lon, selectedDate);
-          setNasaData(nasaResult);
-        } catch (error) {
-          console.error('Failed to fetch NASA data for date change:', error);
-          setNasaData(null);
-        }
-      }, 300);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [date, place, nasaPowerService]);
-
   return (
     <div className="max-w-6xl mx-auto p-6 text-white">
       {/* Header bar */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2 text-2xl md:text-3xl font-extrabold">
-          <span role="img" aria-label="umbrella">☔️</span>
+          <Umbrella size={32} className="text-blue-400" />
           ParadeWeather
         </div>
 
@@ -120,6 +134,7 @@ export default function App() {
             setDate={setDate}
             time={time}
             setTime={setTime}
+            loading={loading}
           />
         </div>
       </HeroGlobe>
@@ -146,8 +161,24 @@ export default function App() {
         </div>
       )}
 
+      {place && nasaLoading && (
+        <div id="data" className="card p-6 mb-6">
+          <div className="flex items-center justify-center py-8">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-8 h-8 border-4 border-blue-400/30 border-t-blue-400 rounded-full animate-spin"></div>
+              <div className="text-white text-lg font-medium">
+                🛰️ {lang === 'ar' ? 'جارٍ تحميل البيانات التاريخية...' : 'Loading historical data...'}
+              </div>
+              <div className="text-white/70 text-sm">
+                {lang === 'ar' ? 'يرجى الانتظار...' : 'Please wait...'}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {place && nasaData && (
-        <div className="card p-6 mb-6">
+        <div id="data" className="card p-6 mb-6">
           <div className="mb-4">
             <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
               🛰️ {lang === 'ar' ? 'البيانات المناخية التاريخية' : 'Historical Climate Data'}
@@ -166,7 +197,9 @@ export default function App() {
               className="group relative p-6 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-400/30 hover:border-blue-300/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 backdrop-blur-sm"
             >
               <div className="text-center">
-                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">🌧️</div>
+                <div className="mb-3 group-hover:scale-110 transition-transform duration-300 flex justify-center">
+                  <CloudRain size={40} className="text-blue-400" />
+                </div>
                 <div className="text-blue-200 text-sm font-medium mb-2">
                   {lang === 'ar' ? 'احتمالية المطر' : 'Rain Probability'}
                 </div>
@@ -181,7 +214,9 @@ export default function App() {
               className="group relative p-6 rounded-2xl bg-gradient-to-br from-orange-500/20 to-red-600/10 border border-orange-400/30 hover:border-orange-300/50 transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/25 backdrop-blur-sm"
             >
               <div className="text-center">
-                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">🌡️</div>
+                <div className="mb-3 group-hover:scale-110 transition-transform duration-300 flex justify-center">
+                  <Thermometer size={40} className="text-orange-400" />
+                </div>
                 <div className="text-orange-200 text-sm font-medium mb-2">
                   {lang === 'ar' ? 'متوسط الحرارة' : 'Avg Temperature'}
                 </div>
@@ -196,7 +231,9 @@ export default function App() {
               className="group relative p-6 rounded-2xl bg-gradient-to-br from-gray-500/20 to-slate-600/10 border border-gray-400/30 hover:border-gray-300/50 transition-all duration-300 hover:shadow-lg hover:shadow-gray-500/25 backdrop-blur-sm"
             >
               <div className="text-center">
-                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">☁️</div>
+                <div className="mb-3 group-hover:scale-110 transition-transform duration-300 flex justify-center">
+                  <Cloud size={40} className="text-gray-400" />
+                </div>
                 <div className="text-gray-200 text-sm font-medium mb-2">
                   {lang === 'ar' ? 'الغطاء السحابي' : 'Cloud Cover'}
                 </div>
@@ -211,7 +248,9 @@ export default function App() {
               className="group relative p-6 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/10 border border-cyan-400/30 hover:border-cyan-300/50 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/25 backdrop-blur-sm"
             >
               <div className="text-center">
-                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">❄️</div>
+                <div className="mb-3 group-hover:scale-110 transition-transform duration-300 flex justify-center">
+                  <Snowflake size={40} className="text-cyan-400" />
+                </div>
                 <div className="text-cyan-200 text-sm font-medium mb-2">
                   {lang === 'ar' ? 'احتمالية الثلج' : 'Snow Probability'}
                 </div>
@@ -226,7 +265,9 @@ export default function App() {
               className="group relative p-6 rounded-2xl bg-gradient-to-br from-green-500/20 to-emerald-600/10 border border-green-400/30 hover:border-green-300/50 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/25 backdrop-blur-sm"
             >
               <div className="text-center">
-                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">💨</div>
+                <div className="mb-3 group-hover:scale-110 transition-transform duration-300 flex justify-center">
+                  <Wind size={40} className="text-green-400" />
+                </div>
                 <div className="text-green-200 text-sm font-medium mb-2">
                   {lang === 'ar' ? 'سرعة الرياح' : 'Wind Speed'}
                 </div>
@@ -241,7 +282,9 @@ export default function App() {
               className="group relative p-6 rounded-2xl bg-gradient-to-br from-purple-500/20 to-indigo-600/10 border border-purple-400/30 hover:border-purple-300/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/25 backdrop-blur-sm"
             >
               <div className="text-center">
-                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">💧</div>
+                <div className="mb-3 group-hover:scale-110 transition-transform duration-300 flex justify-center">
+                  <Droplets size={40} className="text-purple-400" />
+                </div>
                 <div className="text-purple-200 text-sm font-medium mb-2">
                   {lang === 'ar' ? 'الرطوبة' : 'Humidity'}
                 </div>

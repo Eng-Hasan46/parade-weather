@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Calendar, Umbrella } from "lucide-react";
 import { geocodeCity } from "../lib/weather";
 
 // Small debounce hook
@@ -14,24 +15,27 @@ function useDebounced(value, delay = 300) {
 // Icon
 const Pin = () => (
   <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" className="opacity-80">
-    <path d="M12 22s8-7.58 8-12a8 8 0 1 0-16 0c0 4.42 8 12 8 12Zm0-9a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"/>
+    <path d="M12 22s8-7.58 8-12a8 8 0 1 0-16 0c0 4.42 8 12 8 12Zm0-9a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" />
   </svg>
 );
 
 export default function SearchForm({
   lang = "en",
   labels,
-  onPick,            // function(place) -> set place in parent
+  onPick,
   date,
   setDate,
-  onCheck,          // optional callback before scrolling
-  scrollTargetId = "results", // anchor to scroll to on Check
+  time,
+  setTime,
+  onCheck,
+  scrollTargetId = "results",
+  loading = false,
+  checking = false
 }) {
   const [q, setQ] = useState("");
   const [list, setList] = useState([]);
   const [busy, setBusy] = useState(false);        // searching suggestions
   const [geoBusy, setGeoBusy] = useState(false);  // using geolocation
-  const [checking, setChecking] = useState(false);// pressing Check
   const [error, setError] = useState("");
 
   const dq = useDebounced(q);
@@ -87,15 +91,12 @@ export default function SearchForm({
     );
   }
 
-  // Press Check -> optional callback -> smooth scroll to anchor
+  // Press Check -> call parent callback
   async function handleCheck() {
     try {
-      setChecking(true);
-      await onCheck?.(); // if parent returns a promise, we await it
-      const el = document.getElementById(scrollTargetId);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    } finally {
-      setChecking(false);
+      await onCheck?.(); // parent handles everything including scrolling
+    } catch (error) {
+      console.error('Error in handleCheck:', error);
     }
   }
 
@@ -133,7 +134,7 @@ export default function SearchForm({
               <button
                 onClick={() => { setQ(""); setList([]); }}
                 className="absolute right-[11.5rem] md:right-[13rem] top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
-                aria-label={lang==='ar'?'مسح النص':'Clear'}
+                aria-label={lang === 'ar' ? 'مسح النص' : 'Clear'}
               >
                 ×
               </button>
@@ -216,7 +217,10 @@ export default function SearchForm({
 
         {/* Date */}
         <div className="md:col-span-5">
-          <div className="text-white/80 text-sm mb-1">📅 {labels.date}</div>
+          <div className="text-white/80 text-sm mb-1 flex items-center gap-1">
+            <Calendar className="w-4 h-4" />
+            {labels.date}
+          </div>
           <input
             type="date"
             className="input w-full"
@@ -246,7 +250,10 @@ export default function SearchForm({
               {lang === "ar" ? "جارٍ التحميل..." : "Loading results..."}
             </>
           ) : (
-            <>☔ {labels.check}</>
+            <>
+              <Umbrella className="w-5 h-5" />
+              {labels.check}
+            </>
           )}
         </button>
       </div>
