@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import MapPicker from "./components/MapPicker.jsx";
 import SearchForm from "./components/SearchForm.jsx";
 
@@ -18,7 +18,7 @@ export default function App() {
   const [nasaData, setNasaData] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null);
   const [loading, setLoading] = useState(false);
-  
+
   const nasaPowerService = useMemo(() => new NASAPowerService(), []);
 
   async function onPick(p) {
@@ -34,11 +34,11 @@ export default function App() {
         const wind = h.wind_speed_10m[tIdx] ?? 0;
         setSum(verdict({ pop, uv, apparentC: heatIndexC(temp, 60), wind }));
       }
-      
+
       // Fetch NASA historical data for this date
       try {
-        const currentDate = new Date();
-        const nasaResult = await nasaPowerService.getAnnualAverageData(p.lat, p.lon, currentDate);
+        const selectedDate = new Date(date);
+        const nasaResult = await nasaPowerService.getAnnualAverageData(p.lat, p.lon, selectedDate);
         setNasaData(nasaResult);
       } catch (error) {
         console.error('Failed to fetch NASA data:', error);
@@ -55,13 +55,30 @@ export default function App() {
     return { temp: h.temperature_2m[t], pop: h.precipitation_probability[t], uv: h.uv_index[t], wind: h.wind_speed_10m[t] };
   }, [data, date]);
 
+  // Refresh NASA data when date changes
+  useEffect(() => {
+    if (place && date) {
+      const fetchNASAData = async () => {
+        try {
+          const selectedDate = new Date(date);
+          const nasaResult = await nasaPowerService.getAnnualAverageData(place.lat, place.lon, selectedDate);
+          setNasaData(nasaResult);
+        } catch (error) {
+          console.error('Failed to fetch NASA data for date change:', error);
+          setNasaData(null);
+        }
+      };
+      fetchNASAData();
+    }
+  }, [date, place, nasaPowerService]);
+
   return (
     <div className="max-w-6xl mx-auto p-6 text-white">
       {/* Header bar */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2 text-2xl md:text-3xl font-extrabold">
-         <span role="img" aria-label="umbrella">☔️</span>
-         ParadeWeather
+          <span role="img" aria-label="umbrella">☔️</span>
+          ParadeWeather
         </div>
 
         <div className="flex items-center gap-2">
@@ -110,294 +127,310 @@ export default function App() {
 
       {/* NASA Historical Climate Data */}
       {place && nasaData && (
-        <div className="card p-5 mb-6">
-          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-            🛰️ {lang === 'ar' ? 'البيانات المناخية التاريخية لهذا التاريخ' : 'Historical Climate Data for Today'}
-          </h3>
-          <div className="text-sm text-white/70 mb-4">
-            {lang === 'ar' 
-              ? `البيانات من ${nasaData.location.startYear}-${nasaData.location.endYear} (${nasaData.location.yearsOfData} سنة)`
-              : `Data from ${nasaData.location.startYear}-${nasaData.location.endYear} (${nasaData.location.yearsOfData} years)`
-            }
+        <div className="card p-6 mb-6">
+          <div className="mb-4">
+            <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+              🛰️ {lang === 'ar' ? 'البيانات المناخية التاريخية' : 'Historical Climate Data'}
+            </h3>
+            <p className="text-white/70 text-sm">
+              {lang === 'ar'
+                ? `📅 ${new Date(date).toLocaleDateString('ar')} • البيانات من ${nasaData.location.startYear}-${nasaData.location.endYear} (${nasaData.location.yearsOfData} سنة)`
+                : `📅 ${new Date(date).toLocaleDateString()} • Data from ${nasaData.location.startYear}-${nasaData.location.endYear} (${nasaData.location.yearsOfData} years)`
+              }
+            </p>
           </div>
-          
-          {/* Clickable Buttons Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <button 
+
+          {/* Climate Metrics Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+            <button
               onClick={() => setExpandedCard(expandedCard === 'rain' ? null : 'rain')}
-              className="card p-4 hover:bg-white/3 transition-colors duration-100 cursor-pointer"
+              className="group relative p-6 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-400/30 hover:border-blue-300/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 backdrop-blur-sm"
             >
               <div className="text-center">
-                <div className="text-3xl mb-2">🌧️</div>
-                <div className="text-white/70 text-sm">{lang === 'ar' ? 'احتمالية المطر' : 'Rain Probability'}</div>
-                <div className="text-xl font-semibold">
+                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">🌧️</div>
+                <div className="text-blue-200 text-sm font-medium mb-2">
+                  {lang === 'ar' ? 'احتمالية المطر' : 'Rain Probability'}
+                </div>
+                <div className="text-2xl font-bold text-white">
                   {nasaData.averages?.RAIN_PROBABILITY_TODAY ? `${nasaData.averages.RAIN_PROBABILITY_TODAY.average.toFixed(1)}%` : '--'}
                 </div>
               </div>
             </button>
-            
-            <button 
+
+            <button
               onClick={() => setExpandedCard(expandedCard === 'temp' ? null : 'temp')}
-              className="card p-4 hover:bg-white/3 transition-colors duration-100 cursor-pointer"
+              className="group relative p-6 rounded-2xl bg-gradient-to-br from-orange-500/20 to-red-600/10 border border-orange-400/30 hover:border-orange-300/50 transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/25 backdrop-blur-sm"
             >
               <div className="text-center">
-                <div className="text-3xl mb-2">🌡️</div>
-                <div className="text-white/70 text-sm">{lang === 'ar' ? 'متوسط الحرارة' : 'Avg Temperature'}</div>
-                <div className="text-xl font-semibold">
+                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">🌡️</div>
+                <div className="text-orange-200 text-sm font-medium mb-2">
+                  {lang === 'ar' ? 'متوسط الحرارة' : 'Avg Temperature'}
+                </div>
+                <div className="text-2xl font-bold text-white">
                   {nasaData.averages?.T2M ? `${nasaData.averages.T2M.average.toFixed(1)}°C` : '--'}
                 </div>
               </div>
             </button>
-            
-            <button 
+
+            <button
               onClick={() => setExpandedCard(expandedCard === 'uv' ? null : 'uv')}
-              className="card p-4 hover:bg-white/3 transition-colors duration-100 cursor-pointer"
+              className="group relative p-6 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-orange-600/10 border border-yellow-400/30 hover:border-yellow-300/50 transition-all duration-300 hover:shadow-lg hover:shadow-yellow-500/25 backdrop-blur-sm"
             >
               <div className="text-center">
-                <div className="text-3xl mb-2">☀️</div>
-                <div className="text-white/70 text-sm">{lang === 'ar' ? 'الأشعة فوق البنفسجية' : 'UV Index'}</div>
-                <div className="text-xl font-semibold">
+                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">☀️</div>
+                <div className="text-yellow-200 text-sm font-medium mb-2">
+                  {lang === 'ar' ? 'الأشعة فوق البنفسجية' : 'UV Index'}
+                </div>
+                <div className="text-2xl font-bold text-white">
                   {nasaData.averages?.ALLSKY_SFC_SW_DWN ? `${(nasaData.averages.ALLSKY_SFC_SW_DWN.average * 0.4).toFixed(1)}` : '--'}
                 </div>
               </div>
             </button>
-            
-            <button 
+
+            <button
               onClick={() => setExpandedCard(expandedCard === 'snow' ? null : 'snow')}
-              className="card p-4 hover:bg-white/3 transition-colors duration-100 cursor-pointer"
+              className="group relative p-6 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/10 border border-cyan-400/30 hover:border-cyan-300/50 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/25 backdrop-blur-sm"
             >
               <div className="text-center">
-                <div className="text-3xl mb-2">❄️</div>
-                <div className="text-white/70 text-sm">{lang === 'ar' ? 'احتمالية الثلج' : 'Snow Probability'}</div>
-                <div className="text-xl font-semibold">
+                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">❄️</div>
+                <div className="text-cyan-200 text-sm font-medium mb-2">
+                  {lang === 'ar' ? 'احتمالية الثلج' : 'Snow Probability'}
+                </div>
+                <div className="text-2xl font-bold text-white">
                   {nasaData.averages?.T2M ? `${nasaData.averages.T2M.average < 0 ? '15.2' : '0.0'}%` : '--'}
                 </div>
               </div>
             </button>
-            
-            <button 
+
+            <button
               onClick={() => setExpandedCard(expandedCard === 'wind' ? null : 'wind')}
-              className="card p-4 hover:bg-white/3 transition-colors duration-100 cursor-pointer"
+              className="group relative p-6 rounded-2xl bg-gradient-to-br from-green-500/20 to-emerald-600/10 border border-green-400/30 hover:border-green-300/50 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/25 backdrop-blur-sm"
             >
               <div className="text-center">
-                <div className="text-3xl mb-2">💨</div>
-                <div className="text-white/70 text-sm">{lang === 'ar' ? 'سرعة الرياح' : 'Wind Speed'}</div>
-                <div className="text-xl font-semibold">
+                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">💨</div>
+                <div className="text-green-200 text-sm font-medium mb-2">
+                  {lang === 'ar' ? 'سرعة الرياح' : 'Wind Speed'}
+                </div>
+                <div className="text-2xl font-bold text-white">
                   {nasaData.averages?.WS10M ? `${nasaData.averages.WS10M.average.toFixed(1)} m/s` : '--'}
                 </div>
               </div>
             </button>
-            
-            <button 
+
+            <button
               onClick={() => setExpandedCard(expandedCard === 'humidity' ? null : 'humidity')}
-              className="card p-4 hover:bg-white/3 transition-colors duration-100 cursor-pointer"
+              className="group relative p-6 rounded-2xl bg-gradient-to-br from-purple-500/20 to-indigo-600/10 border border-purple-400/30 hover:border-purple-300/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/25 backdrop-blur-sm"
             >
               <div className="text-center">
-                <div className="text-3xl mb-2">💧</div>
-                <div className="text-white/70 text-sm">{lang === 'ar' ? 'الرطوبة' : 'Humidity'}</div>
-                <div className="text-xl font-semibold">
+                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">💧</div>
+                <div className="text-purple-200 text-sm font-medium mb-2">
+                  {lang === 'ar' ? 'الرطوبة' : 'Humidity'}
+                </div>
+                <div className="text-2xl font-bold text-white">
                   {nasaData.averages?.RH2M ? `${nasaData.averages.RH2M.average.toFixed(1)}%` : '--'}
                 </div>
               </div>
             </button>
           </div>
-          
+
           {/* Expanded Card Details */}
           {expandedCard && (
-            <div className="mt-4 p-4 bg-blue-500/20 rounded-lg border border-blue-400/30">
-              {expandedCard === 'rain' && (
-                <div>
-                  <h4 className="font-bold mb-3 flex items-center gap-2">
-                    🌧️ {lang === 'ar' ? 'تفاصيل المطر التاريخية' : 'Historical Rain Details'}
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'احتمالية المطر:' : 'Rain Probability:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.RAIN_PROBABILITY_TODAY?.average.toFixed(1)}% ({nasaData.averages?.RAIN_PROBABILITY_TODAY?.yearsOfData} {lang === 'ar' ? 'سنة' : 'years'})</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'المطر الغزير:' : 'Heavy Rain:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.HEAVY_RAIN_PROBABILITY_TODAY?.average.toFixed(1)}%</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'يوم جاف:' : 'Dry Day:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.DRY_DAY_PROBABILITY_TODAY?.average.toFixed(1)}%</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'متوسط التساقط:' : 'Avg Precipitation:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.PRECTOTCORR?.average.toFixed(2)} mm/day</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {expandedCard === 'temp' && (
-                <div>
-                  <h4 className="font-bold mb-3 flex items-center gap-2">
-                    🌡️ {lang === 'ar' ? 'تفاصيل درجة الحرارة' : 'Temperature Details'}
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'متوسط الحرارة:' : 'Average Temp:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.T2M?.average.toFixed(1)}°C</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'أقصى حرارة:' : 'Max Temp:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.T2M_MAX?.average.toFixed(1)}°C</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'أدنى حرارة:' : 'Min Temp:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.T2M_MIN?.average.toFixed(1)}°C</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'النطاق التاريخي:' : 'Historical Range:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.T2M?.min.toFixed(1)}° - {nasaData.averages?.T2M?.max.toFixed(1)}°C</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {expandedCard === 'uv' && (
-                <div>
-                  <h4 className="font-bold mb-3 flex items-center gap-2">
-                    ☀️ {lang === 'ar' ? 'تفاصيل الأشعة فوق البنفسجية' : 'UV & Solar Details'}
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'مؤشر الأشعة فوق البنفسجية:' : 'UV Index:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.ALLSKY_SFC_SW_DWN ? (nasaData.averages.ALLSKY_SFC_SW_DWN.average * 0.4).toFixed(1) : '--'}</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'الإشعاع الشمسي:' : 'Solar Irradiance:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.ALLSKY_SFC_SW_DWN?.average.toFixed(2)} kWh/m²</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'الغطاء السحابي:' : 'Cloud Coverage:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.CLOUD_AMT?.average.toFixed(1)}%</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'مستوى الخطورة:' : 'Risk Level:'}</span>
-                      <div className="font-semibold">
-                        {(() => {
-                          const uv = nasaData.averages?.ALLSKY_SFC_SW_DWN ? (nasaData.averages.ALLSKY_SFC_SW_DWN.average * 0.4) : 0;
-                          if (uv < 3) return lang === 'ar' ? 'منخفض' : 'Low';
-                          if (uv < 6) return lang === 'ar' ? 'متوسط' : 'Moderate';
-                          if (uv < 8) return lang === 'ar' ? 'عالي' : 'High';
-                          return lang === 'ar' ? 'عالي جداً' : 'Very High';
-                        })()
-                        }
+            <div className="mt-6 p-6 bg-gradient-to-r from-slate-800/80 to-blue-900/50 rounded-2xl border border-slate-600/50 backdrop-blur-sm shadow-2xl animate-in slide-in-from-top-2 duration-300">
+              <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
+                {expandedCard === 'rain' && (
+                  <div>
+                    <h4 className="font-bold mb-3 flex items-center gap-2">
+                      🌧️ {lang === 'ar' ? 'تفاصيل المطر التاريخية' : 'Historical Rain Details'}
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'احتمالية المطر:' : 'Rain Probability:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.RAIN_PROBABILITY_TODAY?.average.toFixed(1)}% ({nasaData.averages?.RAIN_PROBABILITY_TODAY?.yearsOfData} {lang === 'ar' ? 'سنة' : 'years'})</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'المطر الغزير:' : 'Heavy Rain:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.HEAVY_RAIN_PROBABILITY_TODAY?.average.toFixed(1)}%</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'يوم جاف:' : 'Dry Day:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.DRY_DAY_PROBABILITY_TODAY?.average.toFixed(1)}%</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'متوسط التساقط:' : 'Avg Precipitation:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.PRECTOTCORR?.average.toFixed(2)} mm/day</div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-              
-              {expandedCard === 'snow' && (
-                <div>
-                  <h4 className="font-bold mb-3 flex items-center gap-2">
-                    ❄️ {lang === 'ar' ? 'تفاصيل الثلوج' : 'Snow & Cold Details'}
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'احتمالية الثلج:' : 'Snow Probability:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.T2M ? (nasaData.averages.T2M.average < 0 ? '15.2' : '0.0') : '--'}%</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'أيام التجمد:' : 'Freezing Days:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.T2M_MIN ? (nasaData.averages.T2M_MIN.average < 0 ? '8.5' : '0.0') : '--'}%</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'أدنى حرارة مسجلة:' : 'Lowest Recorded:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.T2M_MIN?.min.toFixed(1)}°C</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'حالة الثلج:' : 'Snow Condition:'}</span>
-                      <div className="font-semibold">
-                        {(() => {
-                          const temp = nasaData.averages?.T2M?.average || 20;
-                          if (temp < -5) return lang === 'ar' ? 'ثلج محتمل جداً' : 'Very Likely';
-                          if (temp < 0) return lang === 'ar' ? 'ثلج محتمل' : 'Possible';
-                          if (temp < 5) return lang === 'ar' ? 'نادر' : 'Rare';
-                          return lang === 'ar' ? 'مستحيل' : 'Impossible';
-                        })()
-                        }
+                )}
+
+                {expandedCard === 'temp' && (
+                  <div>
+                    <h4 className="font-bold mb-3 flex items-center gap-2">
+                      🌡️ {lang === 'ar' ? 'تفاصيل درجة الحرارة' : 'Temperature Details'}
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'متوسط الحرارة:' : 'Average Temp:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.T2M?.average.toFixed(1)}°C</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'أقصى حرارة:' : 'Max Temp:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.T2M_MAX?.average.toFixed(1)}°C</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'أدنى حرارة:' : 'Min Temp:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.T2M_MIN?.average.toFixed(1)}°C</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'النطاق التاريخي:' : 'Historical Range:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.T2M?.min.toFixed(1)}° - {nasaData.averages?.T2M?.max.toFixed(1)}°C</div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-              
-              {expandedCard === 'wind' && (
-                <div>
-                  <h4 className="font-bold mb-3 flex items-center gap-2">
-                    💨 {lang === 'ar' ? 'تفاصيل الرياح' : 'Wind Details'}
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'سرعة الرياح:' : 'Wind Speed:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.WS10M?.average.toFixed(1)} m/s</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'السرعة بالكيلومتر:' : 'Speed in km/h:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.WS10M ? (nasaData.averages.WS10M.average * 3.6).toFixed(1) : '--'} km/h</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'أعلى سرعة:' : 'Max Speed:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.WS10M?.max.toFixed(1)} m/s</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'حالة الرياح:' : 'Wind Condition:'}</span>
-                      <div className="font-semibold">
-                        {(() => {
-                          const wind = nasaData.averages?.WS10M?.average || 0;
-                          if (wind < 2) return lang === 'ar' ? 'هادئة' : 'Calm';
-                          if (wind < 6) return lang === 'ar' ? 'نسيم خفيف' : 'Light Breeze';
-                          if (wind < 12) return lang === 'ar' ? 'نسيم معتدل' : 'Moderate Breeze';
-                          if (wind < 18) return lang === 'ar' ? 'رياح قوية' : 'Strong Wind';
-                          return lang === 'ar' ? 'عاصفة' : 'Gale';
-                        })()
-                        }
+                )}
+
+                {expandedCard === 'uv' && (
+                  <div>
+                    <h4 className="font-bold mb-3 flex items-center gap-2">
+                      ☀️ {lang === 'ar' ? 'تفاصيل الأشعة فوق البنفسجية' : 'UV & Solar Details'}
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'مؤشر الأشعة فوق البنفسجية:' : 'UV Index:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.ALLSKY_SFC_SW_DWN ? (nasaData.averages.ALLSKY_SFC_SW_DWN.average * 0.4).toFixed(1) : '--'}</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'الإشعاع الشمسي:' : 'Solar Irradiance:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.ALLSKY_SFC_SW_DWN?.average.toFixed(2)} kWh/m²</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'الغطاء السحابي:' : 'Cloud Coverage:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.CLOUD_AMT?.average.toFixed(1)}%</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'مستوى الخطورة:' : 'Risk Level:'}</span>
+                        <div className="font-semibold">
+                          {(() => {
+                            const uv = nasaData.averages?.ALLSKY_SFC_SW_DWN ? (nasaData.averages.ALLSKY_SFC_SW_DWN.average * 0.4) : 0;
+                            if (uv < 3) return lang === 'ar' ? 'منخفض' : 'Low';
+                            if (uv < 6) return lang === 'ar' ? 'متوسط' : 'Moderate';
+                            if (uv < 8) return lang === 'ar' ? 'عالي' : 'High';
+                            return lang === 'ar' ? 'عالي جداً' : 'Very High';
+                          })()
+                          }
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-              
-              {expandedCard === 'humidity' && (
-                <div>
-                  <h4 className="font-bold mb-3 flex items-center gap-2">
-                    💧 {lang === 'ar' ? 'تفاصيل الرطوبة' : 'Humidity Details'}
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'الرطوبة النسبية:' : 'Relative Humidity:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.RH2M?.average.toFixed(1)}%</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'أعلى رطوبة:' : 'Max Humidity:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.RH2M?.max.toFixed(1)}%</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'أدنى رطوبة:' : 'Min Humidity:'}</span>
-                      <div className="font-semibold">{nasaData.averages?.RH2M?.min.toFixed(1)}%</div>
-                    </div>
-                    <div>
-                      <span className="text-white/70">{lang === 'ar' ? 'حالة الرطوبة:' : 'Humidity Level:'}</span>
-                      <div className="font-semibold">
-                        {(() => {
-                          const humidity = nasaData.averages?.RH2M?.average || 50;
-                          if (humidity < 30) return lang === 'ar' ? 'جافة' : 'Dry';
-                          if (humidity < 50) return lang === 'ar' ? 'معتدلة' : 'Moderate';
-                          if (humidity < 70) return lang === 'ar' ? 'مريحة' : 'Comfortable';
-                          if (humidity < 85) return lang === 'ar' ? 'رطبة' : 'Humid';
-                          return lang === 'ar' ? 'رطبة جداً' : 'Very Humid';
-                        })()
-                        }
+                )}
+
+                {expandedCard === 'snow' && (
+                  <div>
+                    <h4 className="font-bold mb-3 flex items-center gap-2">
+                      ❄️ {lang === 'ar' ? 'تفاصيل الثلوج' : 'Snow & Cold Details'}
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'احتمالية الثلج:' : 'Snow Probability:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.T2M ? (nasaData.averages.T2M.average < 0 ? '15.2' : '0.0') : '--'}%</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'أيام التجمد:' : 'Freezing Days:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.T2M_MIN ? (nasaData.averages.T2M_MIN.average < 0 ? '8.5' : '0.0') : '--'}%</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'أدنى حرارة مسجلة:' : 'Lowest Recorded:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.T2M_MIN?.min.toFixed(1)}°C</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'حالة الثلج:' : 'Snow Condition:'}</span>
+                        <div className="font-semibold">
+                          {(() => {
+                            const temp = nasaData.averages?.T2M?.average || 20;
+                            if (temp < -5) return lang === 'ar' ? 'ثلج محتمل جداً' : 'Very Likely';
+                            if (temp < 0) return lang === 'ar' ? 'ثلج محتمل' : 'Possible';
+                            if (temp < 5) return lang === 'ar' ? 'نادر' : 'Rare';
+                            return lang === 'ar' ? 'مستحيل' : 'Impossible';
+                          })()
+                          }
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+
+                {expandedCard === 'wind' && (
+                  <div>
+                    <h4 className="font-bold mb-3 flex items-center gap-2">
+                      💨 {lang === 'ar' ? 'تفاصيل الرياح' : 'Wind Details'}
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'سرعة الرياح:' : 'Wind Speed:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.WS10M?.average.toFixed(1)} m/s</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'السرعة بالكيلومتر:' : 'Speed in km/h:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.WS10M ? (nasaData.averages.WS10M.average * 3.6).toFixed(1) : '--'} km/h</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'أعلى سرعة:' : 'Max Speed:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.WS10M?.max.toFixed(1)} m/s</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'حالة الرياح:' : 'Wind Condition:'}</span>
+                        <div className="font-semibold">
+                          {(() => {
+                            const wind = nasaData.averages?.WS10M?.average || 0;
+                            if (wind < 2) return lang === 'ar' ? 'هادئة' : 'Calm';
+                            if (wind < 6) return lang === 'ar' ? 'نسيم خفيف' : 'Light Breeze';
+                            if (wind < 12) return lang === 'ar' ? 'نسيم معتدل' : 'Moderate Breeze';
+                            if (wind < 18) return lang === 'ar' ? 'رياح قوية' : 'Strong Wind';
+                            return lang === 'ar' ? 'عاصفة' : 'Gale';
+                          })()
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {expandedCard === 'humidity' && (
+                  <div>
+                    <h4 className="font-bold mb-3 flex items-center gap-2">
+                      💧 {lang === 'ar' ? 'تفاصيل الرطوبة' : 'Humidity Details'}
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'الرطوبة النسبية:' : 'Relative Humidity:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.RH2M?.average.toFixed(1)}%</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'أعلى رطوبة:' : 'Max Humidity:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.RH2M?.max.toFixed(1)}%</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'أدنى رطوبة:' : 'Min Humidity:'}</span>
+                        <div className="font-semibold">{nasaData.averages?.RH2M?.min.toFixed(1)}%</div>
+                      </div>
+                      <div>
+                        <span className="text-white/70">{lang === 'ar' ? 'حالة الرطوبة:' : 'Humidity Level:'}</span>
+                        <div className="font-semibold">
+                          {(() => {
+                            const humidity = nasaData.averages?.RH2M?.average || 50;
+                            if (humidity < 30) return lang === 'ar' ? 'جافة' : 'Dry';
+                            if (humidity < 50) return lang === 'ar' ? 'معتدلة' : 'Moderate';
+                            if (humidity < 70) return lang === 'ar' ? 'مريحة' : 'Comfortable';
+                            if (humidity < 85) return lang === 'ar' ? 'رطبة' : 'Humid';
+                            return lang === 'ar' ? 'رطبة جداً' : 'Very Humid';
+                          })()
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

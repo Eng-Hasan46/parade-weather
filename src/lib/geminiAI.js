@@ -1,5 +1,5 @@
 // Gemini AI Service for Weather Assistant
-import { NASAPowerService } from './nasaPowerAPI.js';
+import { NASAPowerService } from "./nasaPowerAPI.js";
 
 export class GeminiAIService {
   constructor(apiKey) {
@@ -23,11 +23,7 @@ export class GeminiAIService {
     }
 
     // Create comprehensive weather context
-    let weatherContext = this.formatWeatherContext(
-      weatherData,
-      location,
-      lang
-    );
+    let weatherContext = this.formatWeatherContext(weatherData, location, lang);
 
     // Add NASA POWER annual data if requested
     if (includeNASAData && location?.latitude && location?.longitude) {
@@ -38,16 +34,21 @@ export class GeminiAIService {
           location.longitude,
           currentDate
         );
-        
-        const nasaContext = this.nasaPowerService.formatAnnualData(nasaData, lang);
-        weatherContext += lang === 'ar' 
-          ? `\n\nبيانات ناسا للمناخ السنوي:\n${nasaContext}`
-          : `\n\nNASA Annual Climate Data:\n${nasaContext}`;
+
+        const nasaContext = this.nasaPowerService.formatAnnualData(
+          nasaData,
+          lang
+        );
+        weatherContext +=
+          lang === "ar"
+            ? `\n\nبيانات ناسا للمناخ السنوي:\n${nasaContext}`
+            : `\n\nNASA Annual Climate Data:\n${nasaContext}`;
       } catch (error) {
-        console.error('Failed to fetch NASA POWER data:', error);
-        weatherContext += lang === 'ar'
-          ? '\n\nتعذر الحصول على البيانات المناخية السنوية'
-          : '\n\nAnnual climate data unavailable';
+        console.error("Failed to fetch NASA POWER data:", error);
+        weatherContext +=
+          lang === "ar"
+            ? "\n\nتعذر الحصول على البيانات المناخية السنوية"
+            : "\n\nAnnual climate data unavailable";
       }
     }
 
