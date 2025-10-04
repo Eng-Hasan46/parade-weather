@@ -3,12 +3,29 @@ export function heatIndexC(T,RH=60){
   const HI=-42.379+2.04901523*Tf+10.14333127*RH-0.22475541*Tf*RH-0.00683783*Tf*Tf-0.05481717*RH*RH+0.00122874*Tf*Tf*RH+0.00085282*Tf*RH*RH-0.00000199*Tf*Tf*RH*RH;
   return (HI-32)*5/9;
 }
-export function verdict({pop,uv,apparentC,wind}){
-  if(pop>=60) return { icon:"🌧️", en:"High chance of rain — carry an umbrella.", ar:"احتمال عالٍ للمطر — خذ مظلة." };
-  if(apparentC>=40) return { icon:"🥵", en:"Dangerous heat — avoid midday and hydrate.", ar:"حرارة خطيرة — تجنّب الظهيرة واشرب ماء." };
-  if(uv>=8) return { icon:"☀️", en:"Very high UV — sunscreen and shade.", ar:"أشعة UV عالية جداً — واقي شمس وابحث عن الظل." };
-  if(wind>=35) return { icon:"💨", en:"Windy — secure light items.", ar:"رياح قوية — ثبّت الأغراض الخفيفة." };
-  return { icon:"🙂", en:"Looks okay — enjoy your event.", ar:"الوضع طيب — استمتع بوقتك." };
+export function verdict({pop,apparentC,wind}){
+  // Analyze precipitation probability (most critical for parades)
+  if(pop>=80) return { icon:"CloudDrizzle", en:"Heavy rain very likely — postpone outdoor events.", ar:"أمطار غزيرة محتملة جداً — يُنصح بتأجيل الفعاليات الخارجية." };
+  if(pop>=60) return { icon:"CloudRain", en:"Rain probable — prepare covered areas and contingency plans.", ar:"احتمالية هطول أمطار عالية — يُرجى توفير مناطق مغطاة وخطط بديلة." };
+  if(pop>=40) return { icon:"Cloud", en:"Rain possible — monitor forecast and have backup options ready.", ar:"احتمالية هطول أمطار متوسطة — يُنصح بمراقبة التوقعات وتجهيز خيارات بديلة." };
+  
+  // Analyze temperature (apparent temperature includes humidity effects)
+  if(apparentC>=40) return { icon:"Thermometer", en:"Extreme heat warning — provide shade, cooling stations, and medical support.", ar:"تحذير من الحرارة الشديدة — يُرجى توفير الظل ومحطات التبريد والدعم الطبي." };
+  if(apparentC>=35) return { icon:"Sun", en:"Very hot conditions — ensure adequate hydration and frequent breaks.", ar:"ظروف حارة جداً — يُنصح بضمان الترطيب الكافي والاستراحات المتكررة." };
+  if(apparentC<=0) return { icon:"Snowflake", en:"Freezing conditions — provide heating areas and warm beverages.", ar:"ظروف متجمدة — يُرجى توفير مناطق دافئة ومشروبات ساخنة." };
+  if(apparentC<=5) return { icon:"Thermometer", en:"Very cold — participants should dress warmly and limit exposure.", ar:"برد شديد — يُنصح المشاركين بارتداء ملابس دافئة وتقليل التعرض." };
+  
+  // Analyze wind speed (in m/s, convert to km/h: multiply by 3.6)
+  if(wind>=15) return { icon:"Wind", en:"Very strong winds — secure all equipment, banners may not be safe.", ar:"رياح قوية جداً — يُرجى تأمين جميع المعدات، اللافتات قد تكون غير آمنة." };
+  if(wind>=10) return { icon:"Wind", en:"Strong winds — anchor decorations and monitor lightweight items.", ar:"رياح قوية — يُنصح بتثبيت الزينة ومراقبة الأغراض الخفيفة." };
+  if(wind>=7) return { icon:"Wind", en:"Moderate winds — secure loose items and outdoor displays.", ar:"رياح معتدلة — يُنصح بتأمين الأغراض المفكوكة والعروض الخارجية." };
+  
+  // Ideal conditions check
+  if(pop<=20 && apparentC>=15 && apparentC<=28 && wind<=5) return { icon:"CheckCircle", en:"Excellent parade conditions — perfect weather for outdoor celebrations.", ar:"ظروف ممتازة للاستعراض — طقس مثالي للاحتفالات الخارجية." };
+  if(pop<=30 && apparentC>=10 && apparentC<=32 && wind<=8) return { icon:"ThumbsUp", en:"Good conditions — suitable for parades with standard preparations.", ar:"ظروف جيدة — مناسبة للاستعراضات مع التحضيرات العادية." };
+  
+  // Default case
+  return { icon:"AlertTriangle", en:"Fair conditions — proceed with caution and monitor weather updates.", ar:"ظروف مقبولة — يُنصح بالمتابعة بحذر ومراقبة التحديثات الجوية." };
 }
 export function fmt(v,u){ return `${Math.round(v)}${u}`; }
 export const labels={

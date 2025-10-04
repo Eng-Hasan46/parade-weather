@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   CloudRain,
+  CloudDrizzle,
   Thermometer,
   Cloud,
   Snowflake,
@@ -12,7 +13,11 @@ import {
   Calendar,
   Globe,
   TriangleAlert,
-  RotateCcw
+  RotateCcw,
+  Sun,
+  CheckCircle,
+  ThumbsUp,
+  AlertTriangle
 } from "lucide-react";
 import MapPicker from "./components/MapPicker.jsx";
 import SearchForm from "./components/SearchForm.jsx";
@@ -37,6 +42,24 @@ export default function App() {
 
   const nasaPowerService = useMemo(() => new NASAPowerService(), []);
 
+  // Component to render verdict icon
+  const VerdictIcon = ({ iconName }) => {
+    const iconProps = { size: 32, className: "inline mr-2" };
+    switch(iconName) {
+      case 'CloudDrizzle': return <CloudDrizzle {...iconProps} className="inline mr-2 text-blue-400" />;
+      case 'CloudRain': return <CloudRain {...iconProps} className="inline mr-2 text-blue-500" />;
+      case 'Cloud': return <Cloud {...iconProps} className="inline mr-2 text-gray-400" />;
+      case 'Thermometer': return <Thermometer {...iconProps} className="inline mr-2 text-red-400" />;
+      case 'Sun': return <Sun {...iconProps} className="inline mr-2 text-yellow-400" />;
+      case 'Snowflake': return <Snowflake {...iconProps} className="inline mr-2 text-cyan-400" />;
+      case 'Wind': return <Wind {...iconProps} className="inline mr-2 text-green-400" />;
+      case 'CheckCircle': return <CheckCircle {...iconProps} className="inline mr-2 text-green-500" />;
+      case 'ThumbsUp': return <ThumbsUp {...iconProps} className="inline mr-2 text-blue-500" />;
+      case 'AlertTriangle': return <AlertTriangle {...iconProps} className="inline mr-2 text-yellow-500" />;
+      default: return <AlertTriangle {...iconProps} className="inline mr-2 text-gray-400" />;
+    }
+  };
+
   async function checkParadeWeather() {
     if (!place) {
       setShowLocationAlert(true);
@@ -48,6 +71,18 @@ export default function App() {
     const mapSection = document.querySelector('.my-6');
     if (mapSection) {
       mapSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Calculate verdict based on current weather data
+    if (data) {
+      const h = data.hourly, idx = h.time.reduce((a, t, i) => { if (t.startsWith(date)) a.push(i); return a; }, []);
+      const tIdx = idx.find(i => h.time[i].endsWith("12:00")) ?? (idx.length ? idx[Math.floor(idx.length / 2)] : null);
+      if (tIdx != null) {
+        const pop = h.precipitation_probability[tIdx] ?? 0;
+        const temp = h.temperature_2m[tIdx] ?? 0, app = h.apparent_temperature[tIdx] ?? temp;
+        const wind = h.wind_speed_10m[tIdx] ?? 0;
+        setSum(verdict({ pop, apparentC: heatIndexC(temp, 60), wind }));
+      }
     }
 
     // Fetch NASA POWER data
@@ -74,18 +109,11 @@ export default function App() {
 
   async function onPick(p) {
     setPlace(p); setLoading(true);
-    // Clear previous NASA data when selecting new location
+    // Clear previous NASA data and verdict when selecting new location
     setNasaData(null);
+    setSum(null);
     try {
       const f = await getForecast(p.lat, p.lon); setData(f);
-      const h = f.hourly, idx = h.time.reduce((a, t, i) => { if (t.startsWith(date)) a.push(i); return a; }, []);
-      const tIdx = idx.find(i => h.time[i].endsWith("12:00")) ?? (idx.length ? idx[Math.floor(idx.length / 2)] : null);
-      if (tIdx != null) {
-        const pop = h.precipitation_probability[tIdx] ?? 0, uv = h.uv_index[tIdx] ?? 0;
-        const temp = h.temperature_2m[tIdx] ?? 0, app = h.apparent_temperature[tIdx] ?? temp;
-        const wind = h.wind_speed_10m[tIdx] ?? 0;
-        setSum(verdict({ pop, uv, apparentC: heatIndexC(temp, 60), wind }));
-      }
     } finally { setLoading(false); }
   }
 
@@ -154,13 +182,6 @@ export default function App() {
 
       <div className="my-6"><MapPicker point={place} onPick={onPick} /></div>
 
-      {place && (
-        <div className="card p-5 mb-6">
-          <div className="text-white/80 text-sm">{place.name}</div>
-          <div className="text-3xl mt-2">{sum ? `${sum.icon} ${lang === 'ar' ? sum.ar : sum.en}` : (loading ? '…' : '')}</div>
-        </div>
-      )}
-
       {place && nasaLoading && (
         <div id="data" className="card p-6 mb-6">
           <div className="flex items-center justify-center py-8">
@@ -179,6 +200,15 @@ export default function App() {
 
       {place && nasaData && (
         <div id="data" className="card p-6 mb-6">
+          {sum && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/30 rounded-xl">
+              <div className="text-white/80 text-sm mb-2">{place.name}</div>
+              <div className="text-xl flex items-center">
+                <VerdictIcon iconName={sum.icon} />
+                <span>{lang === 'ar' ? sum.ar : sum.en}</span>
+              </div>
+            </div>
+          )}
           <div className="mb-4">
             <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
               🛰️ {lang === 'ar' ? 'البيانات المناخية التاريخية' : 'Historical Climate Data'}
