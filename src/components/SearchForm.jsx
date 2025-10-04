@@ -5,37 +5,37 @@ import { geocodeCity } from "../lib/weather";
 // icon
 const Pin = () => (
   <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" className="opacity-80">
-    <path d="M12 22s8-7.58 8-12a8 8 0 1 0-16 0c0 4.42 8 12 8 12Zm0-9a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"/>
+    <path d="M12 22s8-7.58 8-12a8 8 0 1 0-16 0c0 4.42 8 12 8 12Zm0-9a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" />
   </svg>
 );
 
 // time options with colors
 const TIME_OPTIONS = [
-  { label: "Morning (6AM–12PM)",  dot: "bg-emerald-400",  text: "text-emerald-300" },
-  { label: "Afternoon (12–6PM)",  dot: "bg-yellow-400",   text: "text-yellow-300" },
-  { label: "Evening (6–10PM)",    dot: "bg-orange-400",   text: "text-orange-300" },
-  { label: "Night (10PM–6AM)",    dot: "bg-purple-400",   text: "text-purple-300" },
+  { label: "Morning (6AM–12PM)", dot: "bg-emerald-400", text: "text-emerald-300" },
+  { label: "Afternoon (12–6PM)", dot: "bg-yellow-400", text: "text-yellow-300" },
+  { label: "Evening (6–10PM)", dot: "bg-orange-400", text: "text-orange-300" },
+  { label: "Night (10PM–6AM)", dot: "bg-purple-400", text: "text-purple-300" },
 ];
 
-export default function SearchForm({ lang='en', labels, onPick, onCheck, date, setDate, time, setTime }){
-  const [q,setQ]=useState("");
-  const [list,setList]=useState([]);
-  const [busy,setBusy]=useState(false);
+export default function SearchForm({ lang = 'en', labels, onPick, onCheck, date, setDate, time, setTime }) {
+  const [q, setQ] = useState("");
+  const [list, setList] = useState([]);
+  const [busy, setBusy] = useState(false);
 
-  async function search(){
+  async function search() {
     setBusy(true);
     try { setList(await geocodeCity(q, lang)); }
     finally { setBusy(false); }
   }
 
-  function myLoc(){
-    if(!navigator.geolocation){
-      alert(lang==='ar'?'ميزة تحديد الموقع غير مدعومة':'Geolocation not supported');
+  function myLoc() {
+    if (!navigator.geolocation) {
+      alert(lang === 'ar' ? 'ميزة تحديد الموقع غير مدعومة' : 'Geolocation not supported');
       return;
     }
-    navigator.geolocation.getCurrentPosition(pos=>{
-      onPick({ name: lang==='ar'?'موقعي الحالي':'My location', lat: pos.coords.latitude, lon: pos.coords.longitude });
-    }, ()=> alert(lang==='ar'?'تعذر الحصول على الموقع':'Unable to get location'));
+    navigator.geolocation.getCurrentPosition(pos => {
+      onPick({ name: lang === 'ar' ? 'موقعي الحالي' : 'My location', lat: pos.coords.latitude, lon: pos.coords.longitude });
+    }, () => alert(lang === 'ar' ? 'تعذر الحصول على الموقع' : 'Unable to get location'));
   }
 
   const selectedTime = time || TIME_OPTIONS[0].label;
@@ -48,7 +48,7 @@ export default function SearchForm({ lang='en', labels, onPick, onCheck, date, s
         {/* Location (col-span-5) */}
         <div className="md:col-span-5">
           <div className="text-white/80 text-sm mb-1 flex items-center gap-2">
-            <Pin/>{labels.location}
+            <Pin />{labels.location}
           </div>
 
           {/* input + buttons stay together; never wrap into other columns */}
@@ -57,29 +57,29 @@ export default function SearchForm({ lang='en', labels, onPick, onCheck, date, s
               className="input flex-1 min-w-0"
               placeholder="Manama, Bahrain"
               value={q}
-              onChange={e=>setQ(e.target.value)}
+              onChange={e => setQ(e.target.value)}
             />
             <button
               onClick={search}
               className="shrink-0 rounded-full px-5 py-3 bg-ocean-600 hover:bg-ocean-700 text-white"
             >
-              {busy ? (lang==='ar'?'...':'Search…') : (lang==='ar'?'بحث':'Search')}
+              {busy ? (lang === 'ar' ? '...' : 'Search…') : (lang === 'ar' ? 'بحث' : 'Search')}
             </button>
             <button
               onClick={myLoc}
               className="shrink-0 rounded-full px-5 py-3 bg-white/10 hover:bg-white/20 text-white"
             >
-              {lang==='ar'?'موقعي':'Use'}
+              {lang === 'ar' ? 'موقعي' : 'Use'}
             </button>
           </div>
 
           {/* suggestions */}
-          {list.length>0 && (
+          {list.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
-              {list.map(p=> (
+              {list.map(p => (
                 <button
                   key={`${p.lat},${p.lon}`}
-                  onClick={()=>onPick(p)}
+                  onClick={() => onPick(p)}
                   className="badge hover:bg-white/20"
                 >
                   {p.name}
@@ -96,7 +96,7 @@ export default function SearchForm({ lang='en', labels, onPick, onCheck, date, s
             type="date"
             className="input w-full"
             value={date}
-            onChange={e=>setDate(e.target.value)}
+            onChange={e => setDate(e.target.value)}
           />
         </div>
 
@@ -110,7 +110,7 @@ export default function SearchForm({ lang='en', labels, onPick, onCheck, date, s
               <Listbox.Button className="input w-full flex items-center justify-between">
                 <span className="truncate">{selectedTime}</span>
                 <svg width="18" height="18" viewBox="0 0 24 24" className="opacity-80">
-                  <path fill="currentColor" d="M7 10l5 5 5-5H7z"/>
+                  <path fill="currentColor" d="M7 10l5 5 5-5H7z" />
                 </svg>
               </Listbox.Button>
 
@@ -143,7 +143,7 @@ export default function SearchForm({ lang='en', labels, onPick, onCheck, date, s
                           <span className={`truncate ${t.text}`}>{t.label}</span>
                           {selected && (
                             <svg width="18" height="18" viewBox="0 0 24 24" className="ml-auto text-sky-300">
-                              <path fill="currentColor" d="M9 16.2l-3.5-3.5 1.4-1.4L9 13.4l7.1-7.1 1.4 1.4z"/>
+                              <path fill="currentColor" d="M9 16.2l-3.5-3.5 1.4-1.4L9 13.4l7.1-7.1 1.4 1.4z" />
                             </svg>
                           )}
                         </>
