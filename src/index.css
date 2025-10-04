@@ -65,3 +65,21 @@ body {
   mix-blend-mode: multiply;   /* boosts color without hiding labels */
   image-rendering: auto;
 }
+/* src/index.css */
+
+/* Global light-mode background used on the whole page */
+.bg-light-gradient {
+  /* matches your LightRainGlobe vibe */
+  @apply bg-gradient-to-b from-sky-100 via-blue-50 to-emerald-100;
+}
+
+/* Optional: baseline UI tokens (if not already defined) */
+.badge {
+  @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold bg-white/10 text-white;
+}
+.card {
+  @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md;
+}
+
+/* Dark mode tweaks (if you want) */
+/* html.dark {} */
