@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import MapPicker from "./components/MapPicker.jsx";
 import SearchForm from "./components/SearchForm.jsx";
-import DualAxisChart from "./components/DualAxisChart.jsx";
 import HeroGlobe from "./components/HeroGlobe.jsx";
-import RainRadar from "./components/RainRadar.jsx";
 import WeatherChatbot from "./components/WeatherChatbot.jsx";
 import { getForecast } from "./lib/weather.js";
-import { getPowerHourlyPrecip } from "./lib/nasa.js";
 import { heatIndexC, verdict, fmt, labels as LBL } from "./lib/utils.js";
 import { NASAPowerService } from "./lib/nasaPowerAPI.js";
 import "./index.css";
@@ -21,7 +18,6 @@ export default function App() {
   const [expandedCard, setExpandedCard] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showLocationAlert, setShowLocationAlert] = useState(false);
-  const [powerData, setPowerData] = useState(null);
 
   const nasaPowerService = useMemo(() => new NASAPowerService(), []);
 
@@ -55,13 +51,9 @@ export default function App() {
         const selectedDate = new Date(date);
         const nasaResult = await nasaPowerService.getAnnualAverageData(p.lat, p.lon, selectedDate);
         setNasaData(nasaResult);
-        
-        const powerResult = await getPowerHourlyPrecip(p.lat, p.lon, selectedDate);
-        setPowerData(powerResult);
       } catch (error) {
         console.error('Failed to fetch NASA data:', error);
         setNasaData(null);
-        setPowerData(null);
       }
     } finally { setLoading(false); }
   }
@@ -81,13 +73,9 @@ export default function App() {
           const selectedDate = new Date(date);
           const nasaResult = await nasaPowerService.getAnnualAverageData(place.lat, place.lon, selectedDate);
           setNasaData(nasaResult);
-          
-          const powerResult = await getPowerHourlyPrecip(place.lat, place.lon, selectedDate);
-          setPowerData(powerResult);
         } catch (error) {
           console.error('Failed to fetch NASA data for date change:', error);
           setNasaData(null);
-          setPowerData(null);
         }
       }, 300);
 
@@ -166,7 +154,7 @@ export default function App() {
             </h3>
             <p className="text-white/70 text-sm">
               {lang === 'ar'
-                ? `📅 ${new Date(date).toLocaleDateString('ar-u-nu-arab-ca-gregory', { day: 'numeric', month: 'long', year: 'numeric' })} • البيانات من ${nasaData.location.startYear}-${nasaData.location.endYear} (${nasaData.location.yearsOfData} سنة)`
+                ? `📅 ${new Date(date).toLocaleDateString('ar')} • البيانات من ${nasaData.location.startYear}-${nasaData.location.endYear} (${nasaData.location.yearsOfData} سنة)`
                 : `📅 ${new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} • Data from ${nasaData.location.startYear}-${nasaData.location.endYear} (${nasaData.location.yearsOfData} years)`
               }
             </p>
@@ -460,26 +448,6 @@ export default function App() {
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Rain Radar section */}
-      {place && powerData && (
-        <div className="card p-6 mb-6">
-          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-            🌧️ {lang === 'ar' ? 'رادار المطر' : 'Rain Radar'}
-          </h3>
-          <RainRadar data={powerData} date={date} lang={lang} />
-        </div>
-      )}
-
-      {/* Charts section */}
-      {place && data && (
-        <div className="card p-6 mb-6">
-          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-            📊 {lang === 'ar' ? 'الرسوم البيانية' : 'Weather Charts'}
-          </h3>
-          <DualAxisChart data={data} date={date} lang={lang} />
         </div>
       )}
 
