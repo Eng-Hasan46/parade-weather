@@ -1,0 +1,9 @@
+/// <reference types="react" />
+interface Props {
+    labels: string[];
+    height: string;
+    reverse?: boolean;
+    yLabelsStyle?: (index: number) => {};
+}
+export default function YLabels({ labels, height, yLabelsStyle, reverse }: Props): JSX.Element;
+export {};

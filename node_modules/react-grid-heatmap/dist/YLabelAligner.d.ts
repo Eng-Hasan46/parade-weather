@@ -1,0 +1,8 @@
+/// <reference types="react" />
+interface Props {
+    xLabelHeight: number;
+    isXLabelReverse: boolean;
+    children: any;
+}
+export default function YLabelAligner({ xLabelHeight, isXLabelReverse, children }: Props): JSX.Element;
+export {};

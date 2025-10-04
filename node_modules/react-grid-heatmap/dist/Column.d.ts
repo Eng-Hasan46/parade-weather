@@ -1,0 +1,8 @@
+/// <reference types="react" />
+interface Props {
+    children: any;
+    reverse?: boolean;
+    grow?: boolean;
+}
+export default function Column({ children, grow, reverse }: Props): JSX.Element;
+export {};

@@ -1,0 +1,7 @@
+/// <reference types="react" />
+interface Props {
+    children: any;
+    reverse?: boolean;
+}
+export default function Row({ children, reverse }: Props): JSX.Element;
+export {};

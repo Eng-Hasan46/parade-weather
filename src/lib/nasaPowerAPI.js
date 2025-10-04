@@ -15,6 +15,8 @@ export class NASAPowerService {
       "PS", // Surface Pressure (kPa)
       "QV2M", // Specific Humidity at 2 Meters (g/kg)
       "CLOUD_AMT", // Cloud Amount (%)
+      "SNODP", // snow depth,
+      "PRECSNO", // snowfall
     ];
   }
 
@@ -23,7 +25,7 @@ export class NASAPowerService {
       // Use historical data from 1981 to current year for comprehensive climate analysis
       const currentYear = new Date().getFullYear();
       const startDate = "19810101"; // January 1, 1981
-      const endDate = `${currentYear}1231`; // December 31 of current year
+      const endDate = `20241231`; // December 31 of current year
 
       // Build the API URL
       const params = new URLSearchParams({

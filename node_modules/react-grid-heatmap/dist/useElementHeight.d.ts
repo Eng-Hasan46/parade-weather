@@ -1,0 +1,2 @@
+import React from 'react';
+export default function useElementHeight(initHeight: number): [number, React.MutableRefObject<any>];

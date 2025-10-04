@@ -1,0 +1,9 @@
+/// <reference types="react" />
+interface Props {
+    labels: string[];
+    xLabelsStyle?: (index: number) => {};
+    square?: boolean;
+    height: string;
+}
+export default function XLabels({ labels, xLabelsStyle, height, square }: Props): JSX.Element;
+export {};
