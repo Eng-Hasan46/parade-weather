@@ -167,7 +167,7 @@ export default function SnowCard({
           >
             <motion.div
               layoutId={id}
-              className="relative w-[1000px] max-w-[90vw] max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl"
+              className="relative w-[1000px] max-w-[90vw] max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl pb-40"
               onClick={(e) => e.stopPropagation()}
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
@@ -377,13 +377,13 @@ export default function SnowCard({
                       )}
 
                     {/* Heat Maps */}
-                    <div className="space-y-40">
+                    <div className="">
                       <HeatMap variable="snowDepth" />
                       <div className="mb-30"></div>
                     </div>
                   </>
                 )}
-                {!prediction?.snowDepth && (
+                {!prediction?.snowDepth && prediction.snowDepth != 0 && (
                   <div className="text-center py-4 text-gray-500 text-sm">
                     No prediction data available. Click "Predict" to generate
                     forecast.

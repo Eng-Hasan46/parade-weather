@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Calendar, Umbrella } from "lucide-react";
+import { Calendar, Loader, Umbrella } from "lucide-react";
 import { geocodeCity } from "../lib/weather";
 
 // Small debounce hook
@@ -14,7 +14,13 @@ function useDebounced(value, delay = 300) {
 
 // Icon
 const Pin = () => (
-  <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" className="opacity-80">
+  <svg
+    width="16"
+    height="16"
+    fill="currentColor"
+    viewBox="0 0 24 24"
+    className="opacity-80"
+  >
     <path d="M12 22s8-7.58 8-12a8 8 0 1 0-16 0c0 4.42 8 12 8 12Zm0-9a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" />
   </svg>
 );
@@ -30,12 +36,13 @@ export default function SearchForm({
   onCheck,
   scrollTargetId = "results",
   loading = false,
-  checking = false
+  checking = false,
+  queryIsLoading,
 }) {
   const [q, setQ] = useState("");
   const [list, setList] = useState([]);
-  const [busy, setBusy] = useState(false);        // searching suggestions
-  const [geoBusy, setGeoBusy] = useState(false);  // using geolocation
+  const [busy, setBusy] = useState(false); // searching suggestions
+  const [geoBusy, setGeoBusy] = useState(false); // using geolocation
   const [error, setError] = useState("");
 
   const dq = useDebounced(q);
@@ -46,18 +53,24 @@ export default function SearchForm({
     let cancel = false;
     (async () => {
       setError("");
-      if (!dq.trim()) { setList([]); return; }
+      if (!dq.trim()) {
+        setList([]);
+        return;
+      }
       setBusy(true);
       try {
         const res = await geocodeCity(dq.trim(), lang);
         if (!cancel) setList(res || []);
       } catch (e) {
-        if (!cancel) setError(lang === "ar" ? "حدث خطأ أثناء البحث" : "Search failed");
+        if (!cancel)
+          setError(lang === "ar" ? "حدث خطأ أثناء البحث" : "Search failed");
       } finally {
         if (!cancel) setBusy(false);
       }
     })();
-    return () => { cancel = true; };
+    return () => {
+      cancel = true;
+    };
   }, [dq, lang]);
 
   // Pick a suggestion
@@ -70,13 +83,17 @@ export default function SearchForm({
   // Use my location (with loading)
   function myLoc() {
     if (!navigator.geolocation) {
-      alert(lang === "ar" ? "ميزة تحديد الموقع غير مدعومة" : "Geolocation not supported");
+      alert(
+        lang === "ar"
+          ? "ميزة تحديد الموقع غير مدعومة"
+          : "Geolocation not supported"
+      );
       return;
     }
     setGeoBusy(true);
     setError("");
     navigator.geolocation.getCurrentPosition(
-      pos => {
+      (pos) => {
         setGeoBusy(false);
         pickPlace({
           name: lang === "ar" ? "موقعي الحالي" : "My location",
@@ -86,7 +103,9 @@ export default function SearchForm({
       },
       () => {
         setGeoBusy(false);
-        setError(lang === "ar" ? "تعذر الحصول على الموقع" : "Unable to get location");
+        setError(
+          lang === "ar" ? "تعذر الحصول على الموقع" : "Unable to get location"
+        );
       }
     );
   }
@@ -96,7 +115,7 @@ export default function SearchForm({
     try {
       await onCheck?.(); // parent handles everything including scrolling
     } catch (error) {
-      console.error('Error in handleCheck:', error);
+      console.error("Error in handleCheck:", error);
     }
   }
 
@@ -132,9 +151,12 @@ export default function SearchForm({
             {/* Clear text */}
             {q && (
               <button
-                onClick={() => { setQ(""); setList([]); }}
+                onClick={() => {
+                  setQ("");
+                  setList([]);
+                }}
                 className="absolute right-[11.5rem] md:right-[13rem] top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
-                aria-label={lang === 'ar' ? 'مسح النص' : 'Clear'}
+                aria-label={lang === "ar" ? "مسح النص" : "Clear"}
               >
                 ×
               </button>
@@ -147,8 +169,11 @@ export default function SearchForm({
               className={`
                 px-6 py-3 rounded-full font-medium text-white transition-all
                 whitespace-nowrap
-                ${busy ? "bg-sky-800 cursor-not-allowed" :
-                  "bg-gradient-to-r from-sky-500 to-sky-700 hover:from-sky-400 hover:to-sky-600"}
+                ${
+                  busy
+                    ? "bg-sky-800 cursor-not-allowed"
+                    : "bg-gradient-to-r from-sky-500 to-sky-700 hover:from-sky-400 hover:to-sky-600"
+                }
                 shadow-md hover:shadow-lg focus:ring-2 focus:ring-sky-400 focus:outline-none
               `}
               title={lang === "ar" ? "بحث" : "Search"}
@@ -158,8 +183,10 @@ export default function SearchForm({
                   <span className="inline-block w-4 h-4 border-2 border-white/60 border-t-transparent rounded-full animate-spin" />
                   {lang === "ar" ? "جارٍ البحث" : "Searching..."}
                 </span>
+              ) : lang === "ar" ? (
+                "بحث"
               ) : (
-                lang === "ar" ? "بحث" : "Search"
+                "Search"
               )}
             </button>
 
@@ -170,8 +197,11 @@ export default function SearchForm({
               className={`
                 px-6 py-3 rounded-full font-medium text-white transition-all
                 whitespace-nowrap
-                ${geoBusy ? "bg-slate-800 cursor-not-allowed" :
-                  "bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600"}
+                ${
+                  geoBusy
+                    ? "bg-slate-800 cursor-not-allowed"
+                    : "bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600"
+                }
                 shadow-md hover:shadow-lg focus:ring-2 focus:ring-emerald-400 focus:outline-none
               `}
               title={lang === "ar" ? "استخدم موقعي" : "Use My Location"}
@@ -181,8 +211,10 @@ export default function SearchForm({
                   <span className="inline-block w-4 h-4 border-2 border-white/70 border-t-transparent rounded-full animate-spin" />
                   {lang === "ar" ? "جارٍ..." : "Locating..."}
                 </span>
+              ) : lang === "ar" ? (
+                "استخدم موقعي"
               ) : (
-                lang === "ar" ? "استخدم موقعي" : "Use My Location"
+                "Use My Location"
               )}
             </button>
 
@@ -234,14 +266,17 @@ export default function SearchForm({
       <div className="mt-6 flex justify-center">
         <button
           onClick={handleCheck}
-          disabled={checking}
+          disabled={checking || queryIsLoading}
           className={`
             px-10 py-3 rounded-full text-lg font-semibold flex items-center gap-2
-            text-white transition-all
-            ${checking
+           text-white transition-all
+          ${
+            checking
               ? "bg-indigo-800 cursor-wait"
-              : "bg-gradient-to-r from-blue-500 to-indigo-700 hover:from-blue-400 hover:to-indigo-600 shadow-lg hover:shadow-xl"}
+              : "bg-gradient-to-r from-blue-500 to-indigo-700 hover:from-blue-400 hover:to-indigo-600 shadow-lg hover:shadow-xl"
+          }
             focus:ring-2 focus:ring-indigo-400 focus:outline-none
+           disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-60
           `}
         >
           {checking ? (
@@ -251,8 +286,14 @@ export default function SearchForm({
             </>
           ) : (
             <>
-              <Umbrella className="w-5 h-5" />
-              {labels.check}
+              {queryIsLoading ? (
+                <Loader className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <Umbrella className="w-5 h-5" />
+                  {labels.check}
+                </>
+              )}
             </>
           )}
         </button>
