@@ -30,7 +30,12 @@ export class GeminiAIService {
     }
 
     // Create comprehensive weather context
-    let weatherContext = this.formatWeatherContext(weatherData, location, lang, nasaData);
+    let weatherContext = this.formatWeatherContext(
+      weatherData,
+      location,
+      lang,
+      nasaData
+    );
 
     // Add NASA POWER annual data if available
     if (includeNASAData && nasaData) {
@@ -54,11 +59,12 @@ export class GeminiAIService {
       // Fallback: fetch NASA data if not provided but requested
       try {
         const currentDate = new Date();
-        const fetchedNasaData = await this.nasaPowerService.getAnnualAverageData(
-          location.latitude,
-          location.longitude,
-          currentDate
-        );
+        const fetchedNasaData =
+          await this.nasaPowerService.getAnnualAverageData(
+            location.latitude,
+            location.longitude,
+            currentDate
+          );
 
         const nasaContext = this.nasaPowerService.formatAnnualData(
           fetchedNasaData,
@@ -413,17 +419,13 @@ ${todayIndices
         nasaData && nasaData.averages
           ? `
 
-مقارنة مع البيانات التاريخية (ناسا ${
-              nasaData.location?.startYear
-            }-${nasaData.location?.endYear}):
+مقارنة مع البيانات التاريخية (ناسا ${nasaData.location?.startYear}-${
+              nasaData.location?.endYear
+            }):
 - درجة الحرارة مقابل التاريخية: ${
-              avgTemp -
-                (nasaData.averages.T2M?.average || avgTemp) >
-              2
+              avgTemp - (nasaData.averages.T2M?.average || avgTemp) > 2
                 ? "أدفأ من المعتاد"
-                : avgTemp -
-                    (nasaData.averages.T2M?.average || avgTemp) <
-                  -2
+                : avgTemp - (nasaData.averages.T2M?.average || avgTemp) < -2
                 ? "أبرد من المعتاد"
                 : "ضمن النطاق الطبيعي"
             } (المتوسط التاريخي: ${
@@ -511,118 +513,285 @@ ${
     ? "Museums, Shopping, Indoor cafes"
     : "Indoor activities recommended"
 }${
-      nasaData && nasaData.averages
-        ? `
+        nasaData && nasaData.averages
+          ? `
 
-HISTORICAL CLIMATE COMPARISON (NASA Data ${
-            nasaData.location?.startYear
-          }-${nasaData.location?.endYear}):
+HISTORICAL CLIMATE COMPARISON (NASA Data ${nasaData.location?.startYear}-${
+              nasaData.location?.endYear
+            }):
 - Temperature vs Historical: ${
-            avgTemp -
-              (nasaData.averages.T2M?.average || avgTemp) >
-            2
-              ? "Warmer than usual"
-              : avgTemp -
-                  (nasaData.averages.T2M?.average || avgTemp) <
-                -2
-              ? "Cooler than usual"
-              : "Normal range"
-          } (Historical avg: ${
-            nasaData.averages.T2M?.average?.toFixed(1) || "N/A"
-          }°C)
+              avgTemp - (nasaData.averages.T2M?.average || avgTemp) > 2
+                ? "Warmer than usual"
+                : avgTemp - (nasaData.averages.T2M?.average || avgTemp) < -2
+                ? "Cooler than usual"
+                : "Normal range"
+            } (Historical avg: ${
+              nasaData.averages.T2M?.average?.toFixed(1) || "N/A"
+            }°C)
 - Rain Probability vs Historical: ${
-            avgPrecip -
-              (nasaData.averages.RAIN_PROBABILITY_TODAY?.average || avgPrecip) >
-            10
-              ? "Higher than usual"
-              : avgPrecip -
-                  (nasaData.averages.RAIN_PROBABILITY_TODAY?.average ||
-                    avgPrecip) <
-                -10
-              ? "Lower than usual"
-              : "Normal range"
-          } (Historical avg: ${
-            nasaData.averages.RAIN_PROBABILITY_TODAY?.average?.toFixed(1) ||
-            "N/A"
-          }%)
+              avgPrecip -
+                (nasaData.averages.RAIN_PROBABILITY_TODAY?.average ||
+                  avgPrecip) >
+              10
+                ? "Higher than usual"
+                : avgPrecip -
+                    (nasaData.averages.RAIN_PROBABILITY_TODAY?.average ||
+                      avgPrecip) <
+                  -10
+                ? "Lower than usual"
+                : "Normal range"
+            } (Historical avg: ${
+              nasaData.averages.RAIN_PROBABILITY_TODAY?.average?.toFixed(1) ||
+              "N/A"
+            }%)
 - Climate Pattern: Based on ${
-            nasaData.location?.yearsOfData || "historical"
-          } years of data
+              nasaData.location?.yearsOfData || "historical"
+            } years of data
 - Best Historical Months: ${
-            Object.entries(nasaData.averages || {})
-              .filter(([key, value]) => key.includes("T2M") && value.average)
-              .sort((a, b) => Math.abs(a[1].average - 22) - Math.abs(b[1].average - 22))
-              .slice(0, 2)
-              .map(([key]) => key.split("_")[0])
-              .join(", ") || "Data processing"
-          }`
-        : ""
-    }`;
+              Object.entries(nasaData.averages || {})
+                .filter(([key, value]) => key.includes("T2M") && value.average)
+                .sort(
+                  (a, b) =>
+                    Math.abs(a[1].average - 22) - Math.abs(b[1].average - 22)
+                )
+                .slice(0, 2)
+                .map(([key]) => key.split("_")[0])
+                .join(", ") || "Data processing"
+            }`
+          : ""
+      }`;
     }
   }
 
   checkWeatherRelevance(userMessage, lang) {
     const message = userMessage.toLowerCase();
-    
+
     // Define clearly non-weather keywords that should be redirected
     const nonWeatherKeywords = [
-      'politics', 'political', 'government', 'election', 'president', 'minister',
-      'economy', 'stock', 'market', 'finance', 'money', 'bitcoin', 'cryptocurrency',
-      'sports', 'football', 'soccer', 'basketball', 'game', 'match', 'player',
-      'programming', 'computer', 'software', 'code', 'website', 'app',
-      'medicine', 'doctor', 'hospital', 'disease', 'health',
-      'recipe', 'cooking', 'restaurant', 'meal', 'food',
-      'movie', 'film', 'music', 'song', 'actor', 'celebrity',
-      'school', 'university', 'homework', 'exam',
-      'religion', 'philosophy', 'history'
+      "politics",
+      "political",
+      "government",
+      "election",
+      "president",
+      "minister",
+      "economy",
+      "stock",
+      "market",
+      "finance",
+      "money",
+      "bitcoin",
+      "cryptocurrency",
+      "sports",
+      "football",
+      "soccer",
+      "basketball",
+      "game",
+      "match",
+      "player",
+      "programming",
+      "computer",
+      "software",
+      "code",
+      "website",
+      "app",
+      "medicine",
+      "doctor",
+      "hospital",
+      "disease",
+      "health",
+      "recipe",
+      "cooking",
+      "restaurant",
+      "meal",
+      "food",
+      "movie",
+      "film",
+      "music",
+      "song",
+      "actor",
+      "celebrity",
+      "school",
+      "university",
+      "homework",
+      "exam",
+      "religion",
+      "philosophy",
+      "history",
     ];
 
     const arabicNonWeatherKeywords = [
-      'سياسة', 'سياسي', 'حكومة', 'انتخابات', 'رئيس', 'وزير',
-      'اقتصاد', 'بورصة', 'سوق', 'مالية', 'مال', 'بيتكوين',
-      'رياضة', 'كرة', 'مباراة', 'لعبة', 'فريق', 'لاعب',
-      'برمجة', 'كمبيوتر', 'برنامج', 'كود', 'موقع', 'تطبيق',
-      'طب', 'طبيب', 'مستشفى', 'مرض', 'صحة',
-      'وصفة', 'طبخ', 'مطعم', 'وجبة', 'طعام',
-      'فيلم', 'موسيقى', 'أغنية', 'ممثل', 'مشهور',
-      'مدرسة', 'جامعة', 'واجب', 'امتحان',
-      'دين', 'فلسفة', 'تاريخ'
+      "سياسة",
+      "سياسي",
+      "حكومة",
+      "انتخابات",
+      "رئيس",
+      "وزير",
+      "اقتصاد",
+      "بورصة",
+      "سوق",
+      "مالية",
+      "مال",
+      "بيتكوين",
+      "رياضة",
+      "كرة",
+      "مباراة",
+      "لعبة",
+      "فريق",
+      "لاعب",
+      "برمجة",
+      "كمبيوتر",
+      "برنامج",
+      "كود",
+      "موقع",
+      "تطبيق",
+      "طب",
+      "طبيب",
+      "مستشفى",
+      "مرض",
+      "صحة",
+      "وصفة",
+      "طبخ",
+      "مطعم",
+      "وجبة",
+      "طعام",
+      "فيلم",
+      "موسيقى",
+      "أغنية",
+      "ممثل",
+      "مشهور",
+      "مدرسة",
+      "جامعة",
+      "واجب",
+      "امتحان",
+      "دين",
+      "فلسفة",
+      "تاريخ",
     ];
 
     // Enhanced weather-related keywords including activity-related terms
     const weatherKeywords = [
-      'weather', 'temperature', 'rain', 'snow', 'wind', 'cloud', 'sun', 'storm',
-      'forecast', 'climate', 'humidity', 'pressure', 'hot', 'cold', 'warm', 'cool',
-      'sunny', 'cloudy', 'rainy', 'snowy', 'windy', 'umbrella', 'coat', 'jacket',
-      'outdoor', 'activity', 'activities', 'trip', 'travel', 'vacation', 'picnic', 'beach',
-      'hiking', 'walking', 'running', 'cycling', 'swimming', 'camping', 'fishing',
-      'best time', 'when', 'where', 'should i go', 'visit', 'destination',
-      'درجة', 'حرارة', 'طقس', 'مطر', 'ثلج', 'رياح', 'غيوم', 'شمس', 'عاصفة',
-      'توقعات', 'مناخ', 'رطوبة', 'ضغط', 'حار', 'بارد', 'دافئ',
-      'مشمس', 'غائم', 'ممطر', 'مثلج', 'عاصف', 'مظلة', 'معطف', 'جاكيت',
-      'خارجي', 'نشاط', 'أنشطة', 'رحلة', 'سفر', 'إجازة', 'نزهة', 'شاطئ',
-      'مشي', 'جري', 'سباحة', 'تخييم', 'صيد', 'أفضل وقت', 'متى', 'أين'
+      "weather",
+      "temperature",
+      "rain",
+      "snow",
+      "wind",
+      "cloud",
+      "sun",
+      "storm",
+      "forecast",
+      "climate",
+      "humidity",
+      "pressure",
+      "hot",
+      "cold",
+      "warm",
+      "cool",
+      "sunny",
+      "cloudy",
+      "rainy",
+      "snowy",
+      "windy",
+      "umbrella",
+      "coat",
+      "jacket",
+      "outdoor",
+      "activity",
+      "activities",
+      "trip",
+      "travel",
+      "vacation",
+      "picnic",
+      "beach",
+      "hiking",
+      "walking",
+      "running",
+      "cycling",
+      "swimming",
+      "camping",
+      "fishing",
+      "best time",
+      "when",
+      "where",
+      "should i go",
+      "visit",
+      "destination",
+      "درجة",
+      "حرارة",
+      "طقس",
+      "مطر",
+      "ثلج",
+      "رياح",
+      "غيوم",
+      "شمس",
+      "عاصفة",
+      "توقعات",
+      "مناخ",
+      "رطوبة",
+      "ضغط",
+      "حار",
+      "بارد",
+      "دافئ",
+      "مشمس",
+      "غائم",
+      "ممطر",
+      "مثلج",
+      "عاصف",
+      "مظلة",
+      "معطف",
+      "جاكيت",
+      "خارجي",
+      "نشاط",
+      "أنشطة",
+      "رحلة",
+      "سفر",
+      "إجازة",
+      "نزهة",
+      "شاطئ",
+      "مشي",
+      "جري",
+      "سباحة",
+      "تخييم",
+      "صيد",
+      "أفضل وقت",
+      "متى",
+      "أين",
     ];
 
     // Activity context keywords that are weather-related
     const weatherActivityKeywords = [
-      'time for', 'time to', 'when to', 'when should', 'best time',
-      'go outside', 'go out', 'outdoor', 'outside activities',
-      'وقت ل', 'متى', 'أفضل وقت', 'خروج', 'أنشطة خارجية'
+      "time for",
+      "time to",
+      "when to",
+      "when should",
+      "best time",
+      "go outside",
+      "go out",
+      "outdoor",
+      "outside activities",
+      "وقت ل",
+      "متى",
+      "أفضل وقت",
+      "خروج",
+      "أنشطة خارجية",
     ];
 
     // Check if the message contains weather or activity keywords
-    const hasWeatherKeywords = weatherKeywords.some(keyword => message.includes(keyword));
-    const hasActivityKeywords = weatherActivityKeywords.some(keyword => message.includes(keyword));
+    const hasWeatherKeywords = weatherKeywords.some((keyword) =>
+      message.includes(keyword)
+    );
+    const hasActivityKeywords = weatherActivityKeywords.some((keyword) =>
+      message.includes(keyword)
+    );
 
     // Check if the message contains clearly non-weather keywords
-    const hasNonWeatherKeywords = lang === 'ar' 
-      ? arabicNonWeatherKeywords.some(keyword => message.includes(keyword))
-      : nonWeatherKeywords.some(keyword => message.includes(keyword));
+    const hasNonWeatherKeywords =
+      lang === "ar"
+        ? arabicNonWeatherKeywords.some((keyword) => message.includes(keyword))
+        : nonWeatherKeywords.some((keyword) => message.includes(keyword));
 
     // Only redirect if it's clearly non-weather AND has no weather/activity context
     if (hasNonWeatherKeywords && !hasWeatherKeywords && !hasActivityKeywords) {
-      return lang === 'ar' 
+      return lang === "ar"
         ? `أنا مساعد ذكي متخصص في الطقس والمناخ! 🌤️
 
 دعنا نتحدث عن:

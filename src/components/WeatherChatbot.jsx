@@ -1,4 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
+import {
+    CloudSun,
+    BarChart3,
+    TrendingUp,
+    Plane,
+    Activity,
+    Shirt,
+    Thermometer,
+    TriangleAlert,
+    RotateCcw,
+    Satellite,
+    Globe
+} from 'lucide-react';
 import GeminiAIService from '../lib/geminiAI.js';
 import { config } from '../config.js';
 
@@ -201,12 +214,19 @@ export default function WeatherChatbot({ weatherData, currentPlace, nasaData, la
                             <button
                                 onClick={() => setIncludeNASAData(!includeNASAData)}
                                 className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${includeNASAData
-                                        ? 'bg-yellow-500 text-white'
-                                        : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white'
+                                    ? 'bg-yellow-500 text-white'
+                                    : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white'
                                     }`}
                                 title={lang === 'ar' ? 'بيانات ناسا السنوية' : 'NASA Annual Data'}
                             >
-                                {includeNASAData ? '🛰️ NASA' : '🌍'}
+                                {includeNASAData ? (
+                                    <span className="flex items-center gap-1">
+                                        <Satellite className="w-4 h-4" />
+                                        NASA
+                                    </span>
+                                ) : (
+                                    <Globe className="w-4 h-4" />
+                                )}
                             </button>
 
                             {/* Maximize/Minimize button */}
