@@ -1,10 +1,13 @@
 // Gemini AI Service for Weather Assistant
+import { NASAPowerService } from './nasaPowerAPI.js';
+
 export class GeminiAIService {
   constructor(apiKey) {
     // Use environment variable first, then user-provided key
     this.apiKey = import.meta.env.VITE_GEMINI_API_KEY || apiKey;
     this.baseUrl =
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+    this.nasaPowerService = new NASAPowerService();
   }
 
   async generateResponse(
@@ -12,18 +15,41 @@ export class GeminiAIService {
     weatherData,
     location,
     lang = "en",
-    retryCount = 0
+    retryCount = 0,
+    includeNASAData = false
   ) {
     if (!this.apiKey) {
       throw new Error("Gemini API key is required");
     }
 
     // Create comprehensive weather context
-    const weatherContext = this.formatWeatherContext(
+    let weatherContext = this.formatWeatherContext(
       weatherData,
       location,
       lang
     );
+
+    // Add NASA POWER annual data if requested
+    if (includeNASAData && location?.latitude && location?.longitude) {
+      try {
+        const currentDate = new Date();
+        const nasaData = await this.nasaPowerService.getAnnualAverageData(
+          location.latitude,
+          location.longitude,
+          currentDate
+        );
+        
+        const nasaContext = this.nasaPowerService.formatAnnualData(nasaData, lang);
+        weatherContext += lang === 'ar' 
+          ? `\n\nبيانات ناسا للمناخ السنوي:\n${nasaContext}`
+          : `\n\nNASA Annual Climate Data:\n${nasaContext}`;
+      } catch (error) {
+        console.error('Failed to fetch NASA POWER data:', error);
+        weatherContext += lang === 'ar'
+          ? '\n\nتعذر الحصول على البيانات المناخية السنوية'
+          : '\n\nAnnual climate data unavailable';
+      }
+    }
 
     // Build the system prompt
     const systemPrompt = this.buildSystemPrompt(lang);
@@ -84,7 +110,8 @@ export class GeminiAIService {
             weatherData,
             location,
             lang,
-            retryCount + 1
+            retryCount + 1,
+            includeNASAData
           );
         }
 

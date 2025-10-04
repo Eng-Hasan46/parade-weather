@@ -10,6 +10,7 @@ export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' 
     const [isTyping, setIsTyping] = useState(false);
     const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
     const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+    const [includeNASAData, setIncludeNASAData] = useState(false);
     const messagesEndRef = useRef(null);
     const aiService = useRef(null);
 
@@ -88,12 +89,14 @@ export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' 
         setIsTyping(true);
 
         try {
-            // Call Gemini AI service
+            // Call Gemini AI service with NASA data option
             const aiResponse = await aiService.current.generateResponse(
                 currentInput,
                 weatherData,
                 currentPlace,
-                lang
+                lang,
+                0,
+                includeNASAData
             );
 
             const botMessage = {
@@ -191,8 +194,21 @@ export default function WeatherChatbot({ weatherData, currentPlace, lang = 'en' 
                             </div>
                         </div>
 
-                        {/* Maximize and Settings buttons */}
+                        {/* NASA Data and Maximize buttons */}
                         <div className="flex items-center gap-2">
+                            {/* NASA Data Toggle */}
+                            <button
+                                onClick={() => setIncludeNASAData(!includeNASAData)}
+                                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                                    includeNASAData 
+                                        ? 'bg-yellow-500 text-white' 
+                                        : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white'
+                                }`}
+                                title={lang === 'ar' ? 'بيانات ناسا السنوية' : 'NASA Annual Data'}
+                            >
+                                {includeNASAData ? '🛰️ NASA' : '🌍'}
+                            </button>
+
                             {/* Maximize/Minimize button */}
                             <button
                                 onClick={() => setIsMaximized(!isMaximized)}
