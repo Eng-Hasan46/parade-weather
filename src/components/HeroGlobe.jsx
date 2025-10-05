@@ -2,8 +2,8 @@ import { useEffect, useRef } from "react";
 import Globe from "react-globe.gl";
 import * as THREE from "three";
 
-const EARTH_TEX  = "https://unpkg.com/three-globe/example/img/earth-dark.jpg";
-const BUMP_TEX   = "https://unpkg.com/three-globe/example/img/earth-topology.png";
+const EARTH_TEX = "https://unpkg.com/three-globe/example/img/earth-dark.jpg";
+const BUMP_TEX = "https://unpkg.com/three-globe/example/img/earth-topology.png";
 const CLOUDS_TEX = "https://unpkg.com/three-globe/example/img/earth-clouds.png";
 
 const GLOBE_SIZE = 200;
@@ -86,7 +86,7 @@ export default function HeroGlobe({ children }) {
   }, []);
 
   return (
-    <div className="relative h-[100vh] w-full overflow-hidden rounded-3xl space-hero">
+    <div className="relative h-[100vh] w-full overflow-hidden rounded-3xl ">
       {/* Globe shifted a bit to the right */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div style={{ transform: `translateX(0px)` }}>

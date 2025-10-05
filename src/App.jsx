@@ -655,7 +655,7 @@ export default function App() {
   }, [data, date]);
 
   return (
-    <div className="max-w-6xl mx-auto p-6 text-white">
+    <div className="w-full mx-auto p-6 text-white">
       {/* Header bar */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2 text-2xl md:text-3xl font-extrabold">
@@ -699,25 +699,25 @@ export default function App() {
             loading={loading}
             queryIsLoading={isLoading}
           />
+        </div> {showLocationAlert && (
+          <div className="mb-4 p-4 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-400/30 rounded-xl backdrop-blur-sm animate-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-3 text-center justify-center">
+              <span className="text-2xl">📍</span>
+              <span className="text-white font-medium">
+                {lang === "ar"
+                  ? "يرجى اختيار موقع الحدث أولاً لفحص طقس الاستعراض!"
+                  : "Please choose an event location first to check your parade weather!"}
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className="my-6">
+          <MapPicker point={place} onPick={onPick} />
         </div>
       </HeroGlobe>
 
-      {showLocationAlert && (
-        <div className="mb-4 p-4 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-400/30 rounded-xl backdrop-blur-sm animate-in slide-in-from-top-2 duration-300">
-          <div className="flex items-center gap-3 text-center justify-center">
-            <span className="text-2xl">📍</span>
-            <span className="text-white font-medium">
-              {lang === "ar"
-                ? "يرجى اختيار موقع الحدث أولاً لفحص طقس الاستعراض!"
-                : "Please choose an event location first to check your parade weather!"}
-            </span>
-          </div>
-        </div>
-      )}
 
-      <div className="my-6">
-        <MapPicker point={place} onPick={onPick} />
-      </div>
 
       {place && nasaLoading && (
         <div id="data" className="card p-6 mb-6">
@@ -775,7 +775,7 @@ export default function App() {
           return (
             <div
               id="data"
-              className="bg-white/10 border-white/10 rounded-2xl shadow-[0_0_40px_rgba(14,165,233,0.22)] p-6 mb-6 "
+              className="bg-white/10 border-white/10 rounded-2xl shadow-[0_0_40px_rgba(14,165,233,0.22)] p-6 mb-6 max-w-6xl justify-center mx-auto"
             >
               {sum && (
                 <div className="mb-6 p-4 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/30 rounded-xl ">
@@ -798,17 +798,15 @@ export default function App() {
                 <p className="text-white/70 text-sm mb-6">
                   {lang === "ar"
                     ? `📅 ${new Date(date).toLocaleDateString(
-                        "ar"
-                      )} • البيانات من ${nasaData.location.startYear}-${
-                        nasaData.location.endYear
-                      } (${nasaData.location.yearsOfData} سنة)`
+                      "ar"
+                    )} • البيانات من ${nasaData.location.startYear}-${nasaData.location.endYear
+                    } (${nasaData.location.yearsOfData} سنة)`
                     : `📅 ${new Date(date).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })} • Data from ${nasaData.location.startYear}-${
-                        nasaData.location.endYear
-                      } (${nasaData.location.yearsOfData} years)`}
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })} • Data from ${nasaData.location.startYear}-${nasaData.location.endYear
+                    } (${nasaData.location.yearsOfData} years)`}
                 </p>
               </div>
 

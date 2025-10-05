@@ -140,13 +140,13 @@ export default function PrecipitationCard({
                   🌧️
                 </div>
                 <div className="text-blue-200 text-sm font-medium mb-2">
-                  {lang === "ar" ? "الأمطار" : "Precipitation"}
+                  {lang === "ar" ? "الأمطار" : "Rainfall"}
                 </div>
                 <div className="text-2xl font-bold text-white">
                   {nasaData.averages?.RAIN_PROBABILITY_TODAY
                     ? `${nasaData.averages.RAIN_PROBABILITY_TODAY.average.toFixed(
-                        1
-                      )}%`
+                      1
+                    )}%`
                     : "--"}
                 </div>
               </div>
@@ -202,7 +202,7 @@ export default function PrecipitationCard({
                     <>
                       <div>
                         <p className="font-semibold text-lg mb-4 text-gray-800">
-                          Precipitation Analysis
+                          Rainfall Analysis
                         </p>
                         <div className="grid grid-cols-3 gap-4">
                           <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
@@ -277,7 +277,7 @@ export default function PrecipitationCard({
                         slopeAndIntercept={slopeAndIntercept}
                       />
                     )}
-                  {}
+                  { }
                   {prediction && (
                     <div className="">
                       <HeatMap variable="rainFall" />{" "}

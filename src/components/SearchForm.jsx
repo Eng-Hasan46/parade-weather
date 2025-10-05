@@ -169,10 +169,9 @@ export default function SearchForm({
               className={`
                 px-6 py-3 rounded-full font-medium text-white transition-all
                 whitespace-nowrap
-                ${
-                  busy
-                    ? "bg-sky-800 cursor-not-allowed"
-                    : "bg-gradient-to-r from-sky-500 to-sky-700 hover:from-sky-400 hover:to-sky-600"
+                ${busy
+                  ? "bg-sky-800 cursor-not-allowed"
+                  : "bg-gradient-to-r from-sky-500 to-sky-700 hover:from-sky-400 hover:to-sky-600"
                 }
                 shadow-md hover:shadow-lg focus:ring-2 focus:ring-sky-400 focus:outline-none
               `}
@@ -197,10 +196,9 @@ export default function SearchForm({
               className={`
                 px-6 py-3 rounded-full font-medium text-white transition-all
                 whitespace-nowrap
-                ${
-                  geoBusy
-                    ? "bg-slate-800 cursor-not-allowed"
-                    : "bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600"
+                ${geoBusy
+                  ? "bg-slate-800 cursor-not-allowed"
+                  : "bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600"
                 }
                 shadow-md hover:shadow-lg focus:ring-2 focus:ring-emerald-400 focus:outline-none
               `}
@@ -270,11 +268,10 @@ export default function SearchForm({
           className={`
             px-10 py-3 rounded-full text-lg font-semibold flex items-center gap-2
            text-white transition-all
-          ${
-            checking
+          ${checking
               ? "bg-indigo-800 cursor-wait"
               : "bg-gradient-to-r from-blue-500 to-indigo-700 hover:from-blue-400 hover:to-indigo-600 shadow-lg hover:shadow-xl"
-          }
+            }
             focus:ring-2 focus:ring-indigo-400 focus:outline-none
            disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-60
           `}
@@ -286,8 +283,9 @@ export default function SearchForm({
             </>
           ) : (
             <>
-              {queryIsLoading ? (
-                <Loader className="w-5 h-5 animate-spin" />
+              {queryIsLoading ? (<div className="flex items-center justify-center gap-4">
+                <Loader className="w-5 h-5 animate-spin" /><span>Fetching Data</span></div>
+
               ) : (
                 <>
                   <Umbrella className="w-5 h-5" />
