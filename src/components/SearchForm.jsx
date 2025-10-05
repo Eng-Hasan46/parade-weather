@@ -137,7 +137,7 @@ export default function SearchForm({
             <Pin /> {labels.location}
           </div>
 
-          <div className="relative flex items-stretch gap-2" ref={inputWrapRef}>
+          <div className="relative flex items-stretch gap-2 flex-wrap" ref={inputWrapRef}>
             <input
               className="input flex-1 min-w-0 pr-10"
               placeholder="Manama, Bahrain"

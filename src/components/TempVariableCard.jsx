@@ -153,7 +153,7 @@ export default function TempVariableCard({
                 }}
               >
                 {/* Exit button top left - Visible positioning */}
-                <button
+                {/* <button
                   onClick={() => setExpanded(null)}
                   className="absolute top-2 left-2 z-30 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-white px-3 py-1.5 rounded-full shadow-xl border border-slate-600 hover:border-slate-500 transition-all duration-300 flex items-center gap-1.5 text-xs font-semibold backdrop-blur-md hover:scale-105"
                 >
@@ -161,7 +161,7 @@ export default function TempVariableCard({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                   </svg>
                   <span>Back</span>
-                </button>
+                </button> */}
                 <button
                   onClick={() => setExpanded(null)}
                   className="absolute top-4 right-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition-colors backdrop-blur-sm"
@@ -332,7 +332,7 @@ export default function TempVariableCard({
                             slopeAndIntercept={slopeAndInterceptAvg}
                           />
                         )}
-                      {}
+                      { }
                       {prediction && (
                         <div className="">
                           <HeatMap variable="avgTemp" />{" "}

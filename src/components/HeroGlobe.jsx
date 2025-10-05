@@ -86,7 +86,7 @@ export default function HeroGlobe({ children }) {
   }, []);
 
   return (
-    <div className="relative h-[100vh] w-full overflow-hidden rounded-3xl ">
+    <div className="relative h-[100vh] w-full overflow-hidden rounded-3xl mb-10 ">
       {/* Globe shifted a bit to the right */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div style={{ transform: `translateX(0px)` }}>
