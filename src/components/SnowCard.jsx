@@ -143,11 +143,13 @@ export default function SnowCard({
                 ❄️
               </div>
               <div className="text-cyan-200 text-sm font-medium mb-2">
-                {lang === "ar" ? "احتمالية الثلج" : "Snow Probability"}
+                {lang === "ar" ? "الثلوج" : "Snow"}
               </div>
               <div className="text-2xl font-bold text-white">
-                {nasaData.averages?.T2M
-                  ? `${nasaData.averages.T2M.average < 0 ? "15.2" : "0.0"}%`
+                {nasaData.averages?.PRECTOTCORR && nasaData.averages?.T2M
+                  ? `${nasaData.averages.T2M.average < 0 
+                      ? (nasaData.averages.PRECTOTCORR.average * 10).toFixed(1) 
+                      : "0.0"} mm`
                   : "--"}
               </div>
             </div>
@@ -178,6 +180,16 @@ export default function SnowCard({
                 damping: 30,
               }}
             >
+              {/* Exit button top left - Visible positioning */}
+              <button
+                onClick={() => setExpanded(null)}
+                className="absolute top-2 left-2 z-30 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-white px-3 py-1.5 rounded-full shadow-xl border border-slate-600 hover:border-slate-500 transition-all duration-300 flex items-center gap-1.5 text-xs font-semibold backdrop-blur-md hover:scale-105"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span>Back</span>
+              </button>
               <button
                 onClick={() => setExpanded(null)}
                 className="absolute top-4 right-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition-colors backdrop-blur-sm"
@@ -301,7 +313,7 @@ export default function SnowCard({
                       {slopeAndInterceptSnowfall.intercept !== 0 &&
                         slopeAndInterceptSnowfall.slope !== 0 && (
                           <PointsLineChart
-                            label="Snowfall trend over years"
+                            label="Snowfall trend over years for the selected date"
                             points={dataPoints.snowfall}
                             slopeAndIntercept={slopeAndInterceptSnowfall}
                           />
@@ -316,9 +328,20 @@ export default function SnowCard({
                           />
                         )}
                     </div>
+
+                    {/* Add info section about charts */}
+                    {nasaData.averages.T2M.average < 5 && 
+                     (!dataPoints.snowfall && !dataPoints.snowDepth) && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                        <h4 className="text-sm font-semibold text-blue-800 mb-1">Historical Trend Data</h4>
+                        <p className="text-xs text-blue-600">
+                          Charts will appear here when historical snow data becomes available for trend analysis.
+                        </p>
+                      </div>
+                    )}
+
                     <div className="space-y-[200px]">
                       <HeatMap variable="snowFall" />
-
                       <div className="mb-30"></div>
                     </div>
                     {/* <div className="mt-[100]">f</div> */}
@@ -370,7 +393,7 @@ export default function SnowCard({
                     {slopeAndInterceptSnowDepth.intercept !== 0 &&
                       slopeAndInterceptSnowDepth.slope !== 0 && (
                         <PointsLineChart
-                          label="Snow depth trend over years"
+                          label="Snow depth trend over years for the selected date"
                           points={dataPoints.snowDepth}
                           slopeAndIntercept={slopeAndInterceptSnowDepth}
                         />
@@ -383,10 +406,18 @@ export default function SnowCard({
                     </div>
                   </>
                 )}
-                {!prediction?.snowDepth && (
+                {!(nasaData.averages?.PRECTOTCORR && nasaData.averages?.T2M) && (
                   <div className="text-center py-4 text-gray-500 text-sm">
-                    No prediction data available. Click "Predict" to generate
-                    forecast.
+                    NASA weather data is loading. Please wait...
+                  </div>
+                )}
+                {nasaData.averages?.PRECTOTCORR && nasaData.averages?.T2M && 
+                 nasaData.averages.T2M.average >= 5 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <div className="text-6xl mb-4">🌡️</div>
+                    <h3 className="text-xl font-semibold text-gray-700 mb-2">No Snow Data Available</h3>
+                    <p className="text-sm">Average temperature ({nasaData.averages.T2M.average.toFixed(1)}°C) is too warm for snow formation.</p>
+                    <p className="text-xs text-gray-400 mt-2">Snow typically occurs when temperatures are below 5°C</p>
                   </div>
                 )}
               </motion.div>

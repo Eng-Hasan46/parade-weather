@@ -45,9 +45,10 @@ export default function TempVariableCard({
     const meanAndStdMin = calculateMeanAndStandardDeviation(dataPoints.min);
 
     const isOpen = expanded === id;
-    const avgTemp = prediction ? Math.round(prediction.avg) : 0;
-    const maxTemp = prediction ? Math.round(prediction.max) : 0;
-    const minTemp = prediction ? Math.round(prediction.min) : 0;
+    // Use NASA data averages for actual temperature values
+    const avgTemp = nasaData.averages?.T2M ? Math.round(nasaData.averages.T2M.average) : 0;
+    const maxTemp = nasaData.averages?.T2M_MAX ? Math.round(nasaData.averages.T2M_MAX.average) : 0;
+    const minTemp = nasaData.averages?.T2M_MIN ? Math.round(nasaData.averages.T2M_MIN.average) : 0;
 
     // Use prediction data if available, otherwise use fallback props
     const oneStdAvg = [
@@ -152,26 +153,34 @@ export default function TempVariableCard({
                   stiffness: 300,
                   damping: 30,
                 }}
+            >
+              {/* Exit button top left - Visible positioning */}
+              <button
+                onClick={() => setExpanded(null)}
+                className="absolute top-2 left-2 z-30 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-white px-3 py-1.5 rounded-full shadow-xl border border-slate-600 hover:border-slate-500 transition-all duration-300 flex items-center gap-1.5 text-xs font-semibold backdrop-blur-md hover:scale-105"
               >
-                <button
-                  onClick={() => setExpanded(null)}
-                  className="absolute top-4 right-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition-colors backdrop-blur-sm"
-                >
-                  <X size={20} />
-                </button>
-
-                <motion.div
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span>Back</span>
+              </button>
+              <button
+                onClick={() => setExpanded(null)}
+                className="absolute top-4 right-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition-colors backdrop-blur-sm"
+              >
+                <X size={20} />
+              </button>                <motion.div
                   className="p-8 space-y-6"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.2 }}
                 >
-                  {/* Current Predictions */}
-                  {prediction?.max && (
+                  {/* Current Temperature Analysis */}
+                  {nasaData.averages?.T2M && (
                     <>
                       <div>
                         <p className="font-semibold text-lg mb-4 text-gray-800">
-                          Current Predictions
+                          Temperature Analysis
                         </p>
                         <div className="grid grid-cols-3 gap-4">
                           <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
@@ -325,10 +334,9 @@ export default function TempVariableCard({
                       )}
                     </>
                   )}
-                  {!prediction && (
+                  {!nasaData.averages?.T2M && (
                     <div className="text-center py-4 text-gray-500 text-sm">
-                      No prediction data available. Click "Predict" to generate
-                      forecast.
+                      NASA weather data is loading. Please wait...
                     </div>
                   )}
                 </motion.div>

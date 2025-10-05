@@ -31,8 +31,9 @@ export default function CloudCoverCard({
   const isOpen = expanded == id;
   const slopeAndIntercept = calculateSlopeAndIntercept(dataPoints);
   const meanAndStd = calculateMeanAndStandardDeviation(dataPoints);
-  const predictedCloudCover = prediction
-    ? Math.round(Math.max(0, prediction))
+  // Use NASA data for actual cloud cover values instead of prediction slope
+  const predictedCloudCover = nasaData.averages?.CLOUD_AMT
+    ? Math.round(Math.max(0, nasaData.averages.CLOUD_AMT.average))
     : 0;
   const oneStd = [
     Math.max(0, Math.round(predictedCloudCover - meanAndStd.standardDeviation)),
@@ -122,10 +123,9 @@ export default function CloudCoverCard({
                 {lang === "ar" ? "الغطاء السحابي" : "Cloud Cover"}
               </div>
               <div className="text-2xl font-bold text-white">
-                {/* {nasaData.averages?.CLOUD_AMT
+                {nasaData.averages?.CLOUD_AMT
                   ? `${nasaData.averages.CLOUD_AMT.average.toFixed(1)}%`
-                  : "--"} */}
-                {predictedCloudCover}%
+                  : "--"}
               </div>
             </div>
           </motion.div>
@@ -156,6 +156,16 @@ export default function CloudCoverCard({
                 damping: 30,
               }}
             >
+              {/* Exit button top left - Visible positioning */}
+              <button
+                onClick={() => setExpanded(null)}
+                className="absolute top-2 left-2 z-30 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-white px-3 py-1.5 rounded-full shadow-xl border border-slate-600 hover:border-slate-500 transition-all duration-300 flex items-center gap-1.5 text-xs font-semibold backdrop-blur-md hover:scale-105"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span>Back</span>
+              </button>
               <button
                 onClick={() => setExpanded(null)}
                 className="absolute top-4 right-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition-colors backdrop-blur-sm"
@@ -169,12 +179,12 @@ export default function CloudCoverCard({
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                {/* Current Predictions */}
-                {prediction && (
+                {/* Current Cloud Cover Analysis */}
+                {nasaData.averages?.CLOUD_AMT && (
                   <>
                     <div>
                       <p className="font-semibold text-lg mb-4 text-gray-800">
-                        Current Predictions
+                        Cloud Cover Analysis
                       </p>
                       <div className="grid grid-cols-3 gap-4">
                         <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
@@ -241,25 +251,24 @@ export default function CloudCoverCard({
 
                 {slopeAndIntercept.intercept != 0 &&
                   slopeAndIntercept.slope != 0 &&
-                  prediction && (
+                  nasaData.averages?.CLOUD_AMT && (
                     <PointsLineChart
-                      label="Avg cloud coverage trend over years for the selected date"
+                      label="Avg cloud cover trend over years for the selected date"
                       points={dataPoints}
                       slopeAndIntercept={slopeAndIntercept}
                     />
                   )}
-                {}
-                {prediction && (
+                
+                {nasaData.averages?.CLOUD_AMT && (
                   <div className="">
                     <HeatMap variable="cloudCoverage" />{" "}
                     <div className="mb-30"></div>
                   </div>
                 )}
 
-                {!prediction && (
+                {!nasaData.averages?.CLOUD_AMT && (
                   <div className="text-center py-4 text-gray-500 text-sm">
-                    No prediction data available. Click "Predict" to generate
-                    forecast.
+                    NASA weather data is loading. Please wait...
                   </div>
                 )}
               </motion.div>

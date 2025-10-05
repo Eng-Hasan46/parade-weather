@@ -34,8 +34,9 @@ export default function WindSpeedCard({
   const isOpen = expanded == id;
   const slopeAndIntercept = calculateSlopeAndIntercept(dataPoints);
   const meanAndStd = calculateMeanAndStandardDeviation(dataPoints);
-  const predictedWindSpeed = prediction
-    ? Math.round(Math.max(0, prediction))
+  // Use NASA data for actual wind speed values instead of prediction slope
+  const predictedWindSpeed = nasaData.averages?.WS10M 
+    ? Math.round(Math.max(0, nasaData.averages.WS10M.average * 3.6)) // Convert m/s to km/h
     : 0;
 
   console.log("SPEEED", predictedWindSpeed, meanAndStd.standardDeviation);
@@ -155,6 +156,16 @@ export default function WindSpeedCard({
                 damping: 30,
               }}
             >
+              {/* Exit button top left - Visible positioning */}
+              <button
+                onClick={() => setExpanded(null)}
+                className="absolute top-2 left-2 z-30 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-white px-3 py-1.5 rounded-full shadow-xl border border-slate-600 hover:border-slate-500 transition-all duration-300 flex items-center gap-1.5 text-xs font-semibold backdrop-blur-md hover:scale-105"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span>Back</span>
+              </button>
               <button
                 onClick={() => setExpanded(null)}
                 className="absolute top-4 right-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition-colors backdrop-blur-sm"
@@ -169,11 +180,11 @@ export default function WindSpeedCard({
                 transition={{ delay: 0.2 }}
               >
                 {/* Current Predictions */}
-                {prediction && (
+                {nasaData.averages?.WS10M && (
                   <>
                     <div>
                       <p className="font-semibold text-lg mb-4 text-gray-800">
-                        Current Predictions
+                        Wind Speed Analysis
                       </p>
                       <div className="grid grid-cols-3 gap-4">
                         <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
@@ -238,25 +249,23 @@ export default function WindSpeedCard({
 
                 {slopeAndIntercept.intercept != 0 &&
                   slopeAndIntercept.slope != 0 &&
-                  prediction && (
+                  nasaData.averages?.WS10M && (
                     <PointsLineChart
                       label="Avg wind speed trend over years for the selected date"
                       points={dataPoints}
                       slopeAndIntercept={slopeAndIntercept}
                     />
                   )}
-                {}
-                {prediction && (
+                {nasaData.averages?.WS10M && (
                   <div className="">
                     <HeatMap variable="windSpeed" />{" "}
                     <div className="mb-30"></div>
                   </div>
                 )}
 
-                {!prediction && (
+                {!nasaData.averages?.WS10M && (
                   <div className="text-center py-4 text-gray-500 text-sm">
-                    No prediction data available. Click "Predict" to generate
-                    forecast.
+                    NASA weather data is loading. Please wait...
                   </div>
                 )}
               </motion.div>

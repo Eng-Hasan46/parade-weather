@@ -37,6 +37,10 @@ export class GeminiAIService {
       nasaData
     );
 
+    // Add complete raw weather data for AI analysis
+    const rawWeatherData = this.formatRawWeatherData(weatherData, lang);
+    weatherContext += rawWeatherData;
+
     // Add NASA POWER annual data if available
     if (includeNASAData && nasaData) {
       try {
@@ -275,12 +279,24 @@ Please try again in a moment for detailed analysis.`;
 
     const now = new Date();
     const today = now.toISOString().split("T")[0];
+    
+    // Calculate tomorrow's date
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split("T")[0];
 
     // Extract today's weather data
     const todayIndices =
       weatherData.hourly?.time
         ?.map((time, index) => ({ time, index }))
         ?.filter((item) => item.time.startsWith(today))
+        ?.map((item) => item.index) || [];
+
+    // Extract tomorrow's weather data
+    const tomorrowIndices =
+      weatherData.hourly?.time
+        ?.map((time, index) => ({ time, index }))
+        ?.filter((item) => item.time.startsWith(tomorrowStr))
         ?.map((item) => item.index) || [];
 
     if (todayIndices.length === 0) {
@@ -559,7 +575,219 @@ HISTORICAL CLIMATE COMPARISON (NASA Data ${nasaData.location?.startYear}-${
                 .join(", ") || "Data processing"
             }`
           : ""
+      }
+
+TOMORROW'S DETAILED FORECAST (${tomorrowStr}):
+${tomorrowIndices.length > 0 ? this.formatTomorrowForecast(weatherData, tomorrowIndices, lang) : (lang === "ar" ? "لا تتوفر بيانات طقس للغد حالياً" : "Tomorrow's weather data not available")}`;
+    }
+  }
+
+  formatTomorrowForecast(weatherData, tomorrowIndices, lang) {
+    // Calculate tomorrow's weather statistics
+    const temps = tomorrowIndices
+      .map((i) => weatherData.hourly.temperature_2m[i])
+      .filter((t) => t != null);
+    const precip = tomorrowIndices.map(
+      (i) => weatherData.hourly.precipitation_probability[i] || 0
+    );
+    const winds = tomorrowIndices.map(
+      (i) => weatherData.hourly.wind_speed_10m[i] || 0
+    );
+    const uvs = tomorrowIndices.map((i) => weatherData.hourly.uv_index[i] || 0);
+
+    const avgTemp = Math.round(temps.reduce((a, b) => a + b, 0) / temps.length);
+    const maxTemp = Math.round(Math.max(...temps));
+    const minTemp = Math.round(Math.min(...temps));
+    const maxPrecip = Math.max(...precip);
+    const avgPrecip = Math.round(
+      precip.reduce((a, b) => a + b, 0) / precip.length
+    );
+    const avgWind = Math.round(winds.reduce((a, b) => a + b, 0) / winds.length);
+    const maxWind = Math.round(Math.max(...winds));
+    const maxUV = Math.max(...uvs);
+
+    // Get key time periods for tomorrow
+    const morningIndices = tomorrowIndices.slice(6, 12); // 6 AM - 12 PM
+    const afternoonIndices = tomorrowIndices.slice(12, 18); // 12 PM - 6 PM
+    const eveningIndices = tomorrowIndices.slice(18, 24); // 6 PM - 12 AM
+
+    const getMorningWeather = () => {
+      if (morningIndices.length === 0) return "N/A";
+      const morningTemp = Math.round(
+        morningIndices.reduce((sum, i) => sum + (weatherData.hourly.temperature_2m[i] || 0), 0) / morningIndices.length
+      );
+      const morningRain = Math.round(
+        morningIndices.reduce((sum, i) => sum + (weatherData.hourly.precipitation_probability[i] || 0), 0) / morningIndices.length
+      );
+      return `${morningTemp}°C, ${morningRain}% rain`;
+    };
+
+    const getAfternoonWeather = () => {
+      if (afternoonIndices.length === 0) return "N/A";
+      const afternoonTemp = Math.round(
+        afternoonIndices.reduce((sum, i) => sum + (weatherData.hourly.temperature_2m[i] || 0), 0) / afternoonIndices.length
+      );
+      const afternoonRain = Math.round(
+        afternoonIndices.reduce((sum, i) => sum + (weatherData.hourly.precipitation_probability[i] || 0), 0) / afternoonIndices.length
+      );
+      return `${afternoonTemp}°C, ${afternoonRain}% rain`;
+    };
+
+    const getEveningWeather = () => {
+      if (eveningIndices.length === 0) return "N/A";
+      const eveningTemp = Math.round(
+        eveningIndices.reduce((sum, i) => sum + (weatherData.hourly.temperature_2m[i] || 0), 0) / eveningIndices.length
+      );
+      const eveningRain = Math.round(
+        eveningIndices.reduce((sum, i) => sum + (weatherData.hourly.precipitation_probability[i] || 0), 0) / eveningIndices.length
+      );
+      return `${eveningTemp}°C, ${eveningRain}% rain`;
+    };
+
+    if (lang === "ar") {
+      return `توقعات تفصيلية للغد:
+درجة الحرارة: ${minTemp}°C → ${maxTemp}°C (متوسط ${avgTemp}°C)
+احتمالية المطر: متوسط ${avgPrecip}% | أقصى ${Math.round(maxPrecip)}%
+الرياح: متوسط ${avgWind} كم/س | أقصى ${maxWind} كم/س
+مؤشر الأشعة فوق البنفسجية: ${Math.round(maxUV)}
+
+فترات اليوم:
+- الصباح (6 ص - 12 ظ): ${getMorningWeather()}
+- بعد الظهر (12 ظ - 6 م): ${getAfternoonWeather()}
+- المساء (6 م - 12 ص): ${getEveningWeather()}
+
+أفضل الأوقات للأنشطة الخارجية: ${
+        maxPrecip < 30 && maxTemp < 35 && avgWind < 25
+          ? "جميع ساعات اليوم مناسبة"
+          : maxPrecip < 50 && maxTemp < 40
+          ? "معظم ساعات اليوم مناسبة"
+          : "ننصح بالأنشطة الداخلية"
       }`;
+    } else {
+      return `Detailed Tomorrow's Forecast:
+Temperature: ${minTemp}°C → ${maxTemp}°C (Average ${avgTemp}°C)
+Rain Probability: Average ${avgPrecip}% | Peak ${Math.round(maxPrecip)}%
+Wind: Average ${avgWind} km/h | Peak ${maxWind} km/h
+UV Index: ${Math.round(maxUV)} (${maxUV > 8 ? "Very High" : maxUV > 5 ? "High" : maxUV > 2 ? "Moderate" : "Low"})
+
+Time Periods:
+- Morning (6 AM - 12 PM): ${getMorningWeather()}
+- Afternoon (12 PM - 6 PM): ${getAfternoonWeather()}
+- Evening (6 PM - 12 AM): ${getEveningWeather()}
+
+Best Times for Outdoor Activities: ${
+        maxPrecip < 30 && maxTemp < 35 && avgWind < 25
+          ? "All day suitable"
+          : maxPrecip < 50 && maxTemp < 40
+          ? "Most of the day suitable"
+          : "Indoor activities recommended"
+      }
+
+Overall Tomorrow's Outlook: ${
+        avgPrecip < 20 && avgTemp >= 18 && avgTemp <= 28
+          ? "Excellent weather conditions"
+          : avgPrecip < 40 && avgTemp >= 15 && avgTemp <= 32
+          ? "Good weather conditions"
+          : "Variable weather conditions"
+      }`;
+    }
+  }
+
+  formatRawWeatherData(weatherData, lang) {
+    if (!weatherData) {
+      return lang === "ar" 
+        ? "\n\nبيانات الطقس الخام: غير متاحة"
+        : "\n\nRaw Weather Data: Not available";
+    }
+
+    const now = new Date();
+    const currentTime = now.toISOString();
+    
+    // Get next 7 days of data (168 hours for full week forecast)
+    const next7DaysData = {
+      hourly: {},
+      daily: weatherData.daily || {}
+    };
+
+    // Extract next 168 hours (7 days) of hourly data
+    if (weatherData.hourly && weatherData.hourly.time) {
+      const currentIndex = weatherData.hourly.time.findIndex(time => 
+        new Date(time) >= now
+      );
+      
+      if (currentIndex >= 0) {
+        const endIndex = Math.min(currentIndex + 168, weatherData.hourly.time.length);
+        
+        Object.keys(weatherData.hourly).forEach(key => {
+          if (Array.isArray(weatherData.hourly[key])) {
+            next7DaysData.hourly[key] = weatherData.hourly[key].slice(currentIndex, endIndex);
+          }
+        });
+      }
+    }
+
+    if (lang === "ar") {
+      return `
+
+========== بيانات الطقس الكاملة للتحليل المتقدم ==========
+
+البيانات اليومية (7 أيام قادمة):
+${JSON.stringify(next7DaysData.daily, null, 2)}
+
+البيانات بالساعة (168 ساعة قادمة):
+الأوقات: ${JSON.stringify(next7DaysData.hourly.time || [], null, 2)}
+درجات الحرارة: ${JSON.stringify(next7DaysData.hourly.temperature_2m || [], null, 2)}
+احتمالية المطر: ${JSON.stringify(next7DaysData.hourly.precipitation_probability || [], null, 2)}
+هطول الأمطار: ${JSON.stringify(next7DaysData.hourly.precipitation || [], null, 2)}
+سرعة الرياح: ${JSON.stringify(next7DaysData.hourly.wind_speed_10m || [], null, 2)}
+اتجاه الرياح: ${JSON.stringify(next7DaysData.hourly.wind_direction_10m || [], null, 2)}
+الرطوبة النسبية: ${JSON.stringify(next7DaysData.hourly.relative_humidity_2m || [], null, 2)}
+الضغط الجوي: ${JSON.stringify(next7DaysData.hourly.surface_pressure || [], null, 2)}
+الغطاء السحابي: ${JSON.stringify(next7DaysData.hourly.cloud_cover || [], null, 2)}
+الرؤية: ${JSON.stringify(next7DaysData.hourly.visibility || [], null, 2)}
+مؤشر الأشعة فوق البنفسجية: ${JSON.stringify(next7DaysData.hourly.uv_index || [], null, 2)}
+درجة الحرارة المحسوسة: ${JSON.stringify(next7DaysData.hourly.apparent_temperature || [], null, 2)}
+نقطة الندى: ${JSON.stringify(next7DaysData.hourly.dew_point_2m || [], null, 2)}
+
+تعليمات خاصة للذكاء الاصطناعي:
+- استخدم هذه البيانات الكاملة لتقديم تنبؤات دقيقة ومفصلة
+- يمكنك تحليل الاتجاهات والأنماط عبر الأيام السبعة القادمة
+- قدم تحليلاً متعمقاً بناءً على جميع المعايير المتاحة
+- اربط البيانات الساعية باليومية لإعطاء صورة شاملة
+
+========================================================`;
+    } else {
+      return `
+
+========== COMPLETE WEATHER DATA FOR ADVANCED AI ANALYSIS ==========
+
+DAILY DATA (Next 7 days):
+${JSON.stringify(next7DaysData.daily, null, 2)}
+
+HOURLY DATA (Next 168 hours):
+Times: ${JSON.stringify(next7DaysData.hourly.time || [], null, 2)}
+Temperatures: ${JSON.stringify(next7DaysData.hourly.temperature_2m || [], null, 2)}
+Rain Probability: ${JSON.stringify(next7DaysData.hourly.precipitation_probability || [], null, 2)}
+Precipitation: ${JSON.stringify(next7DaysData.hourly.precipitation || [], null, 2)}
+Wind Speed: ${JSON.stringify(next7DaysData.hourly.wind_speed_10m || [], null, 2)}
+Wind Direction: ${JSON.stringify(next7DaysData.hourly.wind_direction_10m || [], null, 2)}
+Relative Humidity: ${JSON.stringify(next7DaysData.hourly.relative_humidity_2m || [], null, 2)}
+Surface Pressure: ${JSON.stringify(next7DaysData.hourly.surface_pressure || [], null, 2)}
+Cloud Cover: ${JSON.stringify(next7DaysData.hourly.cloud_cover || [], null, 2)}
+Visibility: ${JSON.stringify(next7DaysData.hourly.visibility || [], null, 2)}
+UV Index: ${JSON.stringify(next7DaysData.hourly.uv_index || [], null, 2)}
+Apparent Temperature: ${JSON.stringify(next7DaysData.hourly.apparent_temperature || [], null, 2)}
+Dew Point: ${JSON.stringify(next7DaysData.hourly.dew_point_2m || [], null, 2)}
+
+SPECIAL AI INSTRUCTIONS:
+- Use this complete dataset to provide precise, detailed forecasts
+- Analyze trends and patterns across the full 7-day period
+- Provide in-depth analysis based on all available parameters
+- Cross-reference hourly with daily data for comprehensive insights
+- Generate specific predictions for any requested time period
+- Consider all weather parameters when making recommendations
+
+========================================================`;
     }
   }
 
@@ -865,12 +1093,23 @@ EXCLUSIVE FUNCTIONS:
 3. Suggest destinations based on specific weather preferences
 4. Recommend weather-appropriate activities and timing
 5. Analyze NASA historical climate data and compare with current conditions
+6. Access and analyze COMPLETE 7-day hourly and daily weather datasets
+7. Provide precise forecasts for any specific time period within 7 days
 
 SPECIALIZED EXPERTISE:
 - Advanced meteorology and atmospheric sciences
 - Climate data analysis and weather pattern recognition
 - Climate-based tourism and optimal travel timing expert
 - Activity-weather matching specialist for all seasons
+- Complete weather dataset analysis (168 hours of hourly data)
+- Multi-parameter weather correlation analysis
+
+DATA ACCESS:
+- You have FULL access to 7 days of hourly weather data (168 hours)
+- Complete daily weather summaries for next 7 days
+- All weather parameters: temperature, precipitation, wind, humidity, pressure, cloud cover, UV index, visibility, dew point
+- Raw JSON weather data provided for advanced analysis
+- Historical NASA climate data for comparison
 
 CRITICAL RULES:
 - ONLY respond to weather, climate, and weather-related travel questions
@@ -893,6 +1132,22 @@ Forecast: Stable conditions for next 6 hours
 Recommended Places: Beaches, parks, outdoor venues
 Ideal Activities: Walking, photography, outdoor sports
 Historical Context: 15% above seasonal average"
+
+TOMORROW'S FORECAST RESPONSE EXAMPLE:
+"Tomorrow's Weather Prediction: 
+Morning: Clear skies, 22°C, 5% rain chance ☀️
+Afternoon: Partly cloudy, 28°C, 15% rain chance 🌤️
+Evening: Clear, 24°C, 10% rain chance
+Best Time for Activities: Morning and evening hours
+Overall Outlook: Excellent conditions for outdoor plans"
+
+ADVANCED DATA ANALYSIS EXAMPLE:
+"7-Day Weather Analysis:
+Based on complete hourly data analysis:
+- Monday-Wednesday: High pressure system, 25-30°C, 0-5% rain
+- Thursday: Front approaching, temperatures drop to 22°C, 40% rain by evening
+- Weekend: Clearing pattern, 24-27°C, perfect for outdoor events
+Detailed hourly breakdown available for any specific day."
 
 REDIRECT NON-WEATHER QUESTIONS:
 "I'm a weather specialist! Let's talk about the current conditions, forecasts, or weather-perfect destinations instead. What weather information can I help you with?"

@@ -41,8 +41,9 @@ export default function PrecipitationCard({
     const isOpen = expanded == id;
     const slopeAndIntercept = calculateSlopeAndIntercept(dataPoints);
     const meanAndStd = calculateMeanAndStandardDeviation(dataPoints);
-    const predictedRainfall = prediction
-      ? Math.round(Math.max(0, prediction))
+    // Use NASA data for actual precipitation values instead of prediction slope
+    const predictedRainfall = nasaData.averages?.PRECTOTCORR 
+      ? Math.round(Math.max(0, nasaData.averages.PRECTOTCORR.average))
       : 0;
 
     const oneStd = [
@@ -136,13 +137,11 @@ export default function PrecipitationCard({
                   🌧️
                 </div>
                 <div className="text-blue-200 text-sm font-medium mb-2">
-                  {lang === "ar" ? "احتمالية المطر" : "Rain Probability"}
+                  {lang === "ar" ? "الأمطار" : "Precipitation"}
                 </div>
                 <div className="text-2xl font-bold text-white">
-                  {nasaData.averages?.RAIN_PROBABILITY_TODAY
-                    ? `${nasaData.averages.RAIN_PROBABILITY_TODAY.average.toFixed(
-                      1
-                    )}%`
+                  {nasaData.averages?.PRECTOTCORR
+                    ? `${nasaData.averages.PRECTOTCORR.average.toFixed(1)} mm`
                     : "--"}
                 </div>
               </div>
@@ -171,26 +170,34 @@ export default function PrecipitationCard({
                   stiffness: 300,
                   damping: 30,
                 }}
+            >
+              {/* Exit button top left - Visible positioning */}
+              <button
+                onClick={() => setExpanded(null)}
+                className="absolute top-2 left-2 z-30 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-white px-3 py-1.5 rounded-full shadow-xl border border-slate-600 hover:border-slate-500 transition-all duration-300 flex items-center gap-1.5 text-xs font-semibold backdrop-blur-md hover:scale-105"
               >
-                <button
-                  onClick={() => setExpanded(null)}
-                  className="absolute top-4 right-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition-colors backdrop-blur-sm"
-                >
-                  <X size={20} />
-                </button>
-
-                <motion.div
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span>Back</span>
+              </button>
+              <button
+                onClick={() => setExpanded(null)}
+                className="absolute top-4 right-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition-colors backdrop-blur-sm"
+              >
+                <X size={20} />
+              </button>                <motion.div
                   className="p-8 space-y-6"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.2 }}
                 >
-                  {/* Current Predictions */}
-                  {prediction && (
+                  {/* Current Precipitation Analysis */}
+                  {nasaData.averages?.PRECTOTCORR && (
                     <>
                       <div>
                         <p className="font-semibold text-lg mb-4 text-gray-800">
-                          Current Predictions
+                          Precipitation Analysis
                         </p>
                         <div className="grid grid-cols-3 gap-4">
                           <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
@@ -270,10 +277,9 @@ export default function PrecipitationCard({
                     </div>
                   )}
 
-                  {!prediction && (
+                  {!nasaData.averages?.PRECTOTCORR && (
                     <div className="text-center py-4 text-gray-500 text-sm">
-                      No prediction data available. Click "Predict" to generate
-                      forecast.
+                      NASA weather data is loading. Please wait...
                     </div>
                   )}
                 </motion.div>

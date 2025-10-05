@@ -1,12 +1,13 @@
+"use client";
+import { motion, AnimatePresence } from "framer-motion";
+import { Droplets, X, TrendingUp } from "lucide-react";
 import PointsLineChart from "../components/LineChart";
 import NormalDistributionChart from "../components/NormalDistributionChart";
+import HeatMap from "./HeatMap";
 import {
   calculateMeanAndStandardDeviation,
   calculateSlopeAndIntercept,
 } from "../lib/graphsHelperFunctions";
-import { AnimatePresence, motion } from "framer-motion";
-import { Droplets, TrendingUp, X } from "lucide-react";
-import HeatMap from "./HeatMap";
 
 // type HumidityCard = {
 //   dewPoint?: number;
@@ -27,10 +28,13 @@ export default function HumidityCard({
   nasaData,
   lang,
 }) {
-  const isOpen = expanded == id;
+  const isOpen = expanded === id;
   const slopeAndIntercept = calculateSlopeAndIntercept(dataPoints);
   const meanAndStd = calculateMeanAndStandardDeviation(dataPoints);
-  const predictedHumidity = prediction;
+  // Use NASA data for actual humidity values instead of prediction slope
+  const predictedHumidity = nasaData.averages?.RH2M 
+    ? Math.round(Math.max(0, nasaData.averages.RH2M.average))
+    : 0;
 
   const oneStd = [
     Math.max(0, Math.round(predictedHumidity - meanAndStd.standardDeviation)),
@@ -155,6 +159,16 @@ export default function HumidityCard({
                 damping: 30,
               }}
             >
+              {/* Exit button top left - Visible positioning */}
+              <button
+                onClick={() => setExpanded(null)}
+                className="absolute top-2 left-2 z-30 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-white px-3 py-1.5 rounded-full shadow-xl border border-slate-600 hover:border-slate-500 transition-all duration-300 flex items-center gap-1.5 text-xs font-semibold backdrop-blur-md hover:scale-105"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span>Back</span>
+              </button>
               <button
                 onClick={() => setExpanded(null)}
                 className="absolute top-4 right-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition-colors backdrop-blur-sm"
@@ -234,7 +248,7 @@ export default function HumidityCard({
 
                 {slopeAndIntercept.intercept != 0 &&
                   slopeAndIntercept.slope != 0 &&
-                  prediction && (
+                  nasaData.averages?.RH2M && (
                     <PointsLineChart
                       label="Avg humidity trend over years for the selected date"
                       points={dataPoints}
@@ -249,10 +263,9 @@ export default function HumidityCard({
                   </div>
                 )}
 
-                {prediction == -1 && (
+                {!nasaData.averages?.RH2M && (
                   <div className="text-center py-4 text-gray-500 text-sm">
-                    No prediction data available. Click "Predict" to generate
-                    forecast.
+                    NASA weather data is loading. Please wait...
                   </div>
                 )}
               </motion.div>
