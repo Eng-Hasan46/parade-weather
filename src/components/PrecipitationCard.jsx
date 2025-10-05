@@ -42,7 +42,7 @@ export default function PrecipitationCard({
     const slopeAndIntercept = calculateSlopeAndIntercept(dataPoints);
     const meanAndStd = calculateMeanAndStandardDeviation(dataPoints);
     // Use NASA data for actual precipitation values instead of prediction slope
-    const predictedRainfall = nasaData.averages?.PRECTOTCORR 
+    const predictedRainfall = nasaData.averages?.PRECTOTCORR
       ? Math.round(Math.max(0, nasaData.averages.PRECTOTCORR.average))
       : 0;
 
@@ -170,23 +170,23 @@ export default function PrecipitationCard({
                   stiffness: 300,
                   damping: 30,
                 }}
-            >
-              {/* Exit button top left - Visible positioning */}
-              <button
-                onClick={() => setExpanded(null)}
-                className="absolute top-2 left-2 z-30 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-white px-3 py-1.5 rounded-full shadow-xl border border-slate-600 hover:border-slate-500 transition-all duration-300 flex items-center gap-1.5 text-xs font-semibold backdrop-blur-md hover:scale-105"
               >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                <span>Back</span>
-              </button>
-              <button
-                onClick={() => setExpanded(null)}
-                className="absolute top-4 right-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition-colors backdrop-blur-sm"
-              >
-                <X size={20} />
-              </button>                <motion.div
+                {/* Exit button top left - Visible positioning */}
+                <button
+                  onClick={() => setExpanded(null)}
+                  className="absolute top-2 left-2 z-30 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-white px-3 py-1.5 rounded-full shadow-xl border border-slate-600 hover:border-slate-500 transition-all duration-300 flex items-center gap-1.5 text-xs font-semibold backdrop-blur-md hover:scale-105"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  <span>Back</span>
+                </button>
+                <button
+                  onClick={() => setExpanded(null)}
+                  className="absolute top-4 right-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition-colors backdrop-blur-sm"
+                >
+                  <X size={20} />
+                </button>                <motion.div
                   className="p-8 space-y-6"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}

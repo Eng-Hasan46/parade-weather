@@ -147,9 +147,9 @@ export default function SnowCard({
               </div>
               <div className="text-2xl font-bold text-white">
                 {nasaData.averages?.PRECTOTCORR && nasaData.averages?.T2M
-                  ? `${nasaData.averages.T2M.average < 0 
-                      ? (nasaData.averages.PRECTOTCORR.average * 10).toFixed(1) 
-                      : "0.0"} mm`
+                  ? `${nasaData.averages.T2M.average < 0
+                    ? (nasaData.averages.PRECTOTCORR.average * 10).toFixed(1)
+                    : "0.0"} mm`
                   : "--"}
               </div>
             </div>
@@ -330,15 +330,15 @@ export default function SnowCard({
                     </div>
 
                     {/* Add info section about charts */}
-                    {nasaData.averages.T2M.average < 5 && 
-                     (!dataPoints.snowfall && !dataPoints.snowDepth) && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-                        <h4 className="text-sm font-semibold text-blue-800 mb-1">Historical Trend Data</h4>
-                        <p className="text-xs text-blue-600">
-                          Charts will appear here when historical snow data becomes available for trend analysis.
-                        </p>
-                      </div>
-                    )}
+                    {nasaData.averages.T2M.average < 5 &&
+                      (!dataPoints.snowfall && !dataPoints.snowDepth) && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                          <h4 className="text-sm font-semibold text-blue-800 mb-1">Historical Trend Data</h4>
+                          <p className="text-xs text-blue-600">
+                            Charts will appear here when historical snow data becomes available for trend analysis.
+                          </p>
+                        </div>
+                      )}
 
                     <div className="space-y-[200px]">
                       <HeatMap variable="snowFall" />
@@ -411,15 +411,15 @@ export default function SnowCard({
                     NASA weather data is loading. Please wait...
                   </div>
                 )}
-                {nasaData.averages?.PRECTOTCORR && nasaData.averages?.T2M && 
-                 nasaData.averages.T2M.average >= 5 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <div className="text-6xl mb-4">🌡️</div>
-                    <h3 className="text-xl font-semibold text-gray-700 mb-2">No Snow Data Available</h3>
-                    <p className="text-sm">Average temperature ({nasaData.averages.T2M.average.toFixed(1)}°C) is too warm for snow formation.</p>
-                    <p className="text-xs text-gray-400 mt-2">Snow typically occurs when temperatures are below 5°C</p>
-                  </div>
-                )}
+                {nasaData.averages?.PRECTOTCORR && nasaData.averages?.T2M &&
+                  nasaData.averages.T2M.average >= 5 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <div className="text-6xl mb-4">🌡️</div>
+                      <h3 className="text-xl font-semibold text-gray-700 mb-2">No Snow Data Available</h3>
+                      <p className="text-sm">Average temperature ({nasaData.averages.T2M.average.toFixed(1)}°C) is too warm for snow formation.</p>
+                      <p className="text-xs text-gray-400 mt-2">Snow typically occurs when temperatures are below 5°C</p>
+                    </div>
+                  )}
               </motion.div>
             </motion.div>
           </motion.div>

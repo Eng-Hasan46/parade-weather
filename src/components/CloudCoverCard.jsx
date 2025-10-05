@@ -258,7 +258,7 @@ export default function CloudCoverCard({
                       slopeAndIntercept={slopeAndIntercept}
                     />
                   )}
-                
+
                 {nasaData.averages?.CLOUD_AMT && (
                   <div className="">
                     <HeatMap variable="cloudCoverage" />{" "}

@@ -32,7 +32,7 @@ export default function HumidityCard({
   const slopeAndIntercept = calculateSlopeAndIntercept(dataPoints);
   const meanAndStd = calculateMeanAndStandardDeviation(dataPoints);
   // Use NASA data for actual humidity values instead of prediction slope
-  const predictedHumidity = nasaData.averages?.RH2M 
+  const predictedHumidity = nasaData.averages?.RH2M
     ? Math.round(Math.max(0, nasaData.averages.RH2M.average))
     : 0;
 

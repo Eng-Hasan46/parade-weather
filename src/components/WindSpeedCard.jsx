@@ -35,7 +35,7 @@ export default function WindSpeedCard({
   const slopeAndIntercept = calculateSlopeAndIntercept(dataPoints);
   const meanAndStd = calculateMeanAndStandardDeviation(dataPoints);
   // Use NASA data for actual wind speed values instead of prediction slope
-  const predictedWindSpeed = nasaData.averages?.WS10M 
+  const predictedWindSpeed = nasaData.averages?.WS10M
     ? Math.round(Math.max(0, nasaData.averages.WS10M.average * 3.6)) // Convert m/s to km/h
     : 0;
 

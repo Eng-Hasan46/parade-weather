@@ -279,7 +279,7 @@ Please try again in a moment for detailed analysis.`;
 
     const now = new Date();
     const today = now.toISOString().split("T")[0];
-    
+
     // Calculate tomorrow's date
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -578,7 +578,13 @@ HISTORICAL CLIMATE COMPARISON (NASA Data ${nasaData.location?.startYear}-${
       }
 
 TOMORROW'S DETAILED FORECAST (${tomorrowStr}):
-${tomorrowIndices.length > 0 ? this.formatTomorrowForecast(weatherData, tomorrowIndices, lang) : (lang === "ar" ? "لا تتوفر بيانات طقس للغد حالياً" : "Tomorrow's weather data not available")}`;
+${
+  tomorrowIndices.length > 0
+    ? this.formatTomorrowForecast(weatherData, tomorrowIndices, lang)
+    : lang === "ar"
+    ? "لا تتوفر بيانات طقس للغد حالياً"
+    : "Tomorrow's weather data not available"
+}`;
     }
   }
 
@@ -614,10 +620,17 @@ ${tomorrowIndices.length > 0 ? this.formatTomorrowForecast(weatherData, tomorrow
     const getMorningWeather = () => {
       if (morningIndices.length === 0) return "N/A";
       const morningTemp = Math.round(
-        morningIndices.reduce((sum, i) => sum + (weatherData.hourly.temperature_2m[i] || 0), 0) / morningIndices.length
+        morningIndices.reduce(
+          (sum, i) => sum + (weatherData.hourly.temperature_2m[i] || 0),
+          0
+        ) / morningIndices.length
       );
       const morningRain = Math.round(
-        morningIndices.reduce((sum, i) => sum + (weatherData.hourly.precipitation_probability[i] || 0), 0) / morningIndices.length
+        morningIndices.reduce(
+          (sum, i) =>
+            sum + (weatherData.hourly.precipitation_probability[i] || 0),
+          0
+        ) / morningIndices.length
       );
       return `${morningTemp}°C, ${morningRain}% rain`;
     };
@@ -625,10 +638,17 @@ ${tomorrowIndices.length > 0 ? this.formatTomorrowForecast(weatherData, tomorrow
     const getAfternoonWeather = () => {
       if (afternoonIndices.length === 0) return "N/A";
       const afternoonTemp = Math.round(
-        afternoonIndices.reduce((sum, i) => sum + (weatherData.hourly.temperature_2m[i] || 0), 0) / afternoonIndices.length
+        afternoonIndices.reduce(
+          (sum, i) => sum + (weatherData.hourly.temperature_2m[i] || 0),
+          0
+        ) / afternoonIndices.length
       );
       const afternoonRain = Math.round(
-        afternoonIndices.reduce((sum, i) => sum + (weatherData.hourly.precipitation_probability[i] || 0), 0) / afternoonIndices.length
+        afternoonIndices.reduce(
+          (sum, i) =>
+            sum + (weatherData.hourly.precipitation_probability[i] || 0),
+          0
+        ) / afternoonIndices.length
       );
       return `${afternoonTemp}°C, ${afternoonRain}% rain`;
     };
@@ -636,10 +656,17 @@ ${tomorrowIndices.length > 0 ? this.formatTomorrowForecast(weatherData, tomorrow
     const getEveningWeather = () => {
       if (eveningIndices.length === 0) return "N/A";
       const eveningTemp = Math.round(
-        eveningIndices.reduce((sum, i) => sum + (weatherData.hourly.temperature_2m[i] || 0), 0) / eveningIndices.length
+        eveningIndices.reduce(
+          (sum, i) => sum + (weatherData.hourly.temperature_2m[i] || 0),
+          0
+        ) / eveningIndices.length
       );
       const eveningRain = Math.round(
-        eveningIndices.reduce((sum, i) => sum + (weatherData.hourly.precipitation_probability[i] || 0), 0) / eveningIndices.length
+        eveningIndices.reduce(
+          (sum, i) =>
+            sum + (weatherData.hourly.precipitation_probability[i] || 0),
+          0
+        ) / eveningIndices.length
       );
       return `${eveningTemp}°C, ${eveningRain}% rain`;
     };
@@ -668,7 +695,15 @@ ${tomorrowIndices.length > 0 ? this.formatTomorrowForecast(weatherData, tomorrow
 Temperature: ${minTemp}°C → ${maxTemp}°C (Average ${avgTemp}°C)
 Rain Probability: Average ${avgPrecip}% | Peak ${Math.round(maxPrecip)}%
 Wind: Average ${avgWind} km/h | Peak ${maxWind} km/h
-UV Index: ${Math.round(maxUV)} (${maxUV > 8 ? "Very High" : maxUV > 5 ? "High" : maxUV > 2 ? "Moderate" : "Low"})
+UV Index: ${Math.round(maxUV)} (${
+        maxUV > 8
+          ? "Very High"
+          : maxUV > 5
+          ? "High"
+          : maxUV > 2
+          ? "Moderate"
+          : "Low"
+      })
 
 Time Periods:
 - Morning (6 AM - 12 PM): ${getMorningWeather()}
@@ -695,32 +730,38 @@ Overall Tomorrow's Outlook: ${
 
   formatRawWeatherData(weatherData, lang) {
     if (!weatherData) {
-      return lang === "ar" 
+      return lang === "ar"
         ? "\n\nبيانات الطقس الخام: غير متاحة"
         : "\n\nRaw Weather Data: Not available";
     }
 
     const now = new Date();
     const currentTime = now.toISOString();
-    
+
     // Get next 7 days of data (168 hours for full week forecast)
     const next7DaysData = {
       hourly: {},
-      daily: weatherData.daily || {}
+      daily: weatherData.daily || {},
     };
 
     // Extract next 168 hours (7 days) of hourly data
     if (weatherData.hourly && weatherData.hourly.time) {
-      const currentIndex = weatherData.hourly.time.findIndex(time => 
-        new Date(time) >= now
+      const currentIndex = weatherData.hourly.time.findIndex(
+        (time) => new Date(time) >= now
       );
-      
+
       if (currentIndex >= 0) {
-        const endIndex = Math.min(currentIndex + 168, weatherData.hourly.time.length);
-        
-        Object.keys(weatherData.hourly).forEach(key => {
+        const endIndex = Math.min(
+          currentIndex + 168,
+          weatherData.hourly.time.length
+        );
+
+        Object.keys(weatherData.hourly).forEach((key) => {
           if (Array.isArray(weatherData.hourly[key])) {
-            next7DaysData.hourly[key] = weatherData.hourly[key].slice(currentIndex, endIndex);
+            next7DaysData.hourly[key] = weatherData.hourly[key].slice(
+              currentIndex,
+              endIndex
+            );
           }
         });
       }
@@ -736,17 +777,57 @@ ${JSON.stringify(next7DaysData.daily, null, 2)}
 
 البيانات بالساعة (168 ساعة قادمة):
 الأوقات: ${JSON.stringify(next7DaysData.hourly.time || [], null, 2)}
-درجات الحرارة: ${JSON.stringify(next7DaysData.hourly.temperature_2m || [], null, 2)}
-احتمالية المطر: ${JSON.stringify(next7DaysData.hourly.precipitation_probability || [], null, 2)}
-هطول الأمطار: ${JSON.stringify(next7DaysData.hourly.precipitation || [], null, 2)}
-سرعة الرياح: ${JSON.stringify(next7DaysData.hourly.wind_speed_10m || [], null, 2)}
-اتجاه الرياح: ${JSON.stringify(next7DaysData.hourly.wind_direction_10m || [], null, 2)}
-الرطوبة النسبية: ${JSON.stringify(next7DaysData.hourly.relative_humidity_2m || [], null, 2)}
-الضغط الجوي: ${JSON.stringify(next7DaysData.hourly.surface_pressure || [], null, 2)}
-الغطاء السحابي: ${JSON.stringify(next7DaysData.hourly.cloud_cover || [], null, 2)}
+درجات الحرارة: ${JSON.stringify(
+        next7DaysData.hourly.temperature_2m || [],
+        null,
+        2
+      )}
+احتمالية المطر: ${JSON.stringify(
+        next7DaysData.hourly.precipitation_probability || [],
+        null,
+        2
+      )}
+هطول الأمطار: ${JSON.stringify(
+        next7DaysData.hourly.precipitation || [],
+        null,
+        2
+      )}
+سرعة الرياح: ${JSON.stringify(
+        next7DaysData.hourly.wind_speed_10m || [],
+        null,
+        2
+      )}
+اتجاه الرياح: ${JSON.stringify(
+        next7DaysData.hourly.wind_direction_10m || [],
+        null,
+        2
+      )}
+الرطوبة النسبية: ${JSON.stringify(
+        next7DaysData.hourly.relative_humidity_2m || [],
+        null,
+        2
+      )}
+الضغط الجوي: ${JSON.stringify(
+        next7DaysData.hourly.surface_pressure || [],
+        null,
+        2
+      )}
+الغطاء السحابي: ${JSON.stringify(
+        next7DaysData.hourly.cloud_cover || [],
+        null,
+        2
+      )}
 الرؤية: ${JSON.stringify(next7DaysData.hourly.visibility || [], null, 2)}
-مؤشر الأشعة فوق البنفسجية: ${JSON.stringify(next7DaysData.hourly.uv_index || [], null, 2)}
-درجة الحرارة المحسوسة: ${JSON.stringify(next7DaysData.hourly.apparent_temperature || [], null, 2)}
+مؤشر الأشعة فوق البنفسجية: ${JSON.stringify(
+        next7DaysData.hourly.uv_index || [],
+        null,
+        2
+      )}
+درجة الحرارة المحسوسة: ${JSON.stringify(
+        next7DaysData.hourly.apparent_temperature || [],
+        null,
+        2
+      )}
 نقطة الندى: ${JSON.stringify(next7DaysData.hourly.dew_point_2m || [], null, 2)}
 
 تعليمات خاصة للذكاء الاصطناعي:
@@ -766,17 +847,49 @@ ${JSON.stringify(next7DaysData.daily, null, 2)}
 
 HOURLY DATA (Next 168 hours):
 Times: ${JSON.stringify(next7DaysData.hourly.time || [], null, 2)}
-Temperatures: ${JSON.stringify(next7DaysData.hourly.temperature_2m || [], null, 2)}
-Rain Probability: ${JSON.stringify(next7DaysData.hourly.precipitation_probability || [], null, 2)}
-Precipitation: ${JSON.stringify(next7DaysData.hourly.precipitation || [], null, 2)}
-Wind Speed: ${JSON.stringify(next7DaysData.hourly.wind_speed_10m || [], null, 2)}
-Wind Direction: ${JSON.stringify(next7DaysData.hourly.wind_direction_10m || [], null, 2)}
-Relative Humidity: ${JSON.stringify(next7DaysData.hourly.relative_humidity_2m || [], null, 2)}
-Surface Pressure: ${JSON.stringify(next7DaysData.hourly.surface_pressure || [], null, 2)}
+Temperatures: ${JSON.stringify(
+        next7DaysData.hourly.temperature_2m || [],
+        null,
+        2
+      )}
+Rain Probability: ${JSON.stringify(
+        next7DaysData.hourly.precipitation_probability || [],
+        null,
+        2
+      )}
+Precipitation: ${JSON.stringify(
+        next7DaysData.hourly.precipitation || [],
+        null,
+        2
+      )}
+Wind Speed: ${JSON.stringify(
+        next7DaysData.hourly.wind_speed_10m || [],
+        null,
+        2
+      )}
+Wind Direction: ${JSON.stringify(
+        next7DaysData.hourly.wind_direction_10m || [],
+        null,
+        2
+      )}
+Relative Humidity: ${JSON.stringify(
+        next7DaysData.hourly.relative_humidity_2m || [],
+        null,
+        2
+      )}
+Surface Pressure: ${JSON.stringify(
+        next7DaysData.hourly.surface_pressure || [],
+        null,
+        2
+      )}
 Cloud Cover: ${JSON.stringify(next7DaysData.hourly.cloud_cover || [], null, 2)}
 Visibility: ${JSON.stringify(next7DaysData.hourly.visibility || [], null, 2)}
 UV Index: ${JSON.stringify(next7DaysData.hourly.uv_index || [], null, 2)}
-Apparent Temperature: ${JSON.stringify(next7DaysData.hourly.apparent_temperature || [], null, 2)}
+Apparent Temperature: ${JSON.stringify(
+        next7DaysData.hourly.apparent_temperature || [],
+        null,
+        2
+      )}
 Dew Point: ${JSON.stringify(next7DaysData.hourly.dew_point_2m || [], null, 2)}
 
 SPECIAL AI INSTRUCTIONS:
