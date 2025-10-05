@@ -24,22 +24,63 @@ export class GeminiAIService {
     }
 
     // Check if question is weather-related and redirect if needed
-    const weatherRedirect = this.checkWeatherRelevance(userMessage, lang);
-    if (weatherRedirect) {
-      return weatherRedirect;
-    }
+    // Note: We now rely on the AI model itself to handle non-weather questions
+    // through the system prompt rather than keyword detection
+    // const weatherRedirect = this.checkWeatherRelevance(userMessage, lang);
+    // if (weatherRedirect) {
+    //   return weatherRedirect;
+    // }
 
     // Create comprehensive weather context
-    let weatherContext = this.formatWeatherContext(
-      weatherData,
-      location,
-      lang,
-      nasaData
-    );
+    let weatherContext = "";
+    
+    if (weatherData && location) {
+      // Full weather data available
+      weatherContext = this.formatWeatherContext(
+        weatherData,
+        location,
+        lang,
+        nasaData
+      );
+      
+      // Add complete raw weather data for AI analysis
+      const rawWeatherData = this.formatRawWeatherData(weatherData, lang);
+      weatherContext += rawWeatherData;
+    } else {
+      // No specific weather data - provide general guidance
+      weatherContext = lang === 'ar' 
+        ? `لا توجد بيانات طقس محددة للموقع متاحة حالياً.
 
-    // Add complete raw weather data for AI analysis
-    const rawWeatherData = this.formatRawWeatherData(weatherData, lang);
-    weatherContext += rawWeatherData;
+قدم نصائح عامة مفيدة حول الطقس والتخطيط بناءً على معرفتك العامة بأنماط الطقس والمناخ.
+
+تشمل إجابتك:
+- نصائح عامة حول الطقس والأنشطة
+- اقتراحات للتخطيط والوجهات
+- أفضل الممارسات لظروف طقس مختلفة
+- توجيه المستخدم لاختيار موقع محدد للتوقعات الدقيقة
+
+اجعل إجابتك مفيدة وتفاعلية، ليس مجرد رد عام.`
+        : `No specific location weather data is currently available.
+
+Provide helpful general weather and planning guidance based on your knowledge of weather patterns and climate.
+
+Include in your response:
+- General weather and activity advice
+- Planning and destination suggestions  
+- Best practices for different weather conditions
+- Guide the user to select a specific location for precise forecasts
+
+Make your response helpful and interactive, not just a generic reply.`;
+    }
+
+    // Special handling for "tomorrow" queries - force structured output
+    const isTomorrowQuery = this.detectTomorrowQuery(userMessage, lang);
+    if (isTomorrowQuery && weatherData) {
+      const tomorrowContext = this.buildTomorrowInstructions(weatherData, lang);
+      if (tomorrowContext) {
+        weatherContext += tomorrowContext;
+      }
+    }
 
     // Add NASA POWER annual data if available
     if (includeNASAData && nasaData) {
@@ -102,9 +143,9 @@ export class GeminiAIService {
         },
       ],
       generationConfig: {
-        temperature: 0.7,
+        temperature: 0.2,
         topK: 40,
-        topP: 0.95,
+        topP: 0.8,
         maxOutputTokens: 1024,
       },
       safetySettings: [
@@ -196,6 +237,14 @@ export class GeminiAIService {
   // Fallback response when AI is overloaded
   getFallbackResponse(userMessage, weatherData, location, lang) {
     const isArabic = lang === "ar";
+    
+    console.log('[WeatherBot] Using fallback response:', {
+      userMessage,
+      hasWeatherData: !!weatherData,
+      hasLocation: !!location,
+      reason: !weatherData ? 'missing weatherData' : !location ? 'missing location' : 'API error/overload',
+      timestamp: new Date().toISOString()
+    });
 
     if (!weatherData || !location) {
       return isArabic
@@ -1056,6 +1105,63 @@ SPECIAL AI INSTRUCTIONS:
       "should i go",
       "visit",
       "destination",
+      // Location-based weather queries
+      "antarctica",
+      "arctic",
+      "polar",
+      "north pole",
+      "south pole",
+      "greenland",
+      "siberia",
+      "alaska",
+      "tomorrow",
+      "today",
+      "tonight",
+      "next week",
+      "this week",
+      "how cold",
+      "how hot",
+      "how warm",
+      "temperature in",
+      "weather in",
+      "forecast for",
+      // Seasonal and statistical weather terms
+      "average",
+      "typical",
+      "normal",
+      "usual",
+      "seasonal",
+      "monthly",
+      "yearly",
+      "annual",
+      "january",
+      "february", 
+      "march",
+      "april",
+      "may",
+      "june",
+      "july",
+      "august",
+      "september",
+      "october",
+      "november", 
+      "december",
+      "winter",
+      "spring",
+      "summer",
+      "autumn",
+      "fall",
+      "season",
+      "climate",
+      "historical",
+      "statistics",
+      "data",
+      "records",
+      "maximum",
+      "minimum",
+      "high",
+      "low",
+      "mean",
       "درجة",
       "حرارة",
       "طقس",
@@ -1132,6 +1238,13 @@ SPECIAL AI INSTRUCTIONS:
 
     // Only redirect if it's clearly non-weather AND has no weather/activity context
     if (hasNonWeatherKeywords && !hasWeatherKeywords && !hasActivityKeywords) {
+      console.log('[WeatherBot] Redirecting non-weather query:', {
+        userMessage,
+        hasNonWeatherKeywords,
+        hasWeatherKeywords,
+        hasActivityKeywords,
+        timestamp: new Date().toISOString()
+      });
       return lang === "ar"
         ? `أنا مساعد ذكي متخصص في الطقس والمناخ! 🌤️
 
@@ -1178,8 +1291,8 @@ What weather information can I help you with?`;
 
 قواعد مهمة جداً:
 - أجب فقط على الأسئلة المتعلقة بالطقس والمناخ والسياحة الجوية
-- إذا سأل المستخدم عن أي موضوع آخر، أعد توجيهه بلطف إلى مواضيع الطقس
-- لا تتحدث عن السياسة أو الأحداث العامة أو أي مواضيع غير جوية
+- إذا سأل المستخدم عن أي موضوع آخر غير الطقس (سياسة، رياضة، برمجة، طبخ، إلخ)، أجب فوراً بـ: "أنا مساعدك للطقس! 🌤️ أساعد فقط في أسئلة الطقس والمناخ والسفر الجوي. ما معلومات الطقس التي تحتاجها؟"
+- لا تحاول الإجابة على أسئلة غير متعلقة بالطقس
 - ركز على البيانات المقدمة وتحليلها بدقة
 
 أسلوب الرد:
@@ -1226,8 +1339,8 @@ DATA ACCESS:
 
 CRITICAL RULES:
 - ONLY respond to weather, climate, and weather-related travel questions
-- If users ask about non-weather topics, politely redirect to weather matters
-- Do NOT discuss politics, general news, or non-meteorological subjects
+- If users ask about ANY non-weather topics (politics, sports, programming, cooking, etc.), immediately respond with: "I'm your weather assistant! 🌤️ I only help with weather, climate, and weather-related travel questions. What weather information can I help you with?"
+- Do NOT attempt to answer questions about non-weather subjects
 - Focus exclusively on the provided weather data and climate analysis
 - Stay within your weather expertise domain
 
@@ -1263,9 +1376,77 @@ Based on complete hourly data analysis:
 Detailed hourly breakdown available for any specific day."
 
 REDIRECT NON-WEATHER QUESTIONS:
-"I'm a weather specialist! Let's talk about the current conditions, forecasts, or weather-perfect destinations instead. What weather information can I help you with?"
+If the user asks about anything non-weather related, respond exactly with:
+"I'm your weather assistant! 🌤️ I only help with weather, climate, and weather-related travel questions. What weather information can I help you with?"
 
 Remember: You are EXCLUSIVELY a weather and climate assistant!`;
+    }
+  }
+
+  // Detect if user is asking about tomorrow
+  detectTomorrowQuery(userMessage, lang) {
+    const message = userMessage.toLowerCase();
+    const tomorrowKeywords = lang === 'ar' 
+      ? ['غدا', 'غداً', 'بكرا', 'يوم غد', 'الغد']
+      : ['tomorrow', 'tmrw', 'next day', 'tom'];
+    
+    return tomorrowKeywords.some(keyword => message.includes(keyword));
+  }
+
+  // Build special instructions for tomorrow queries
+  buildTomorrowInstructions(weatherData, lang) {
+    try {
+      // Find tomorrow's data in the weather dataset
+      const currentTime = new Date();
+      const tomorrowStart = new Date(currentTime);
+      tomorrowStart.setDate(currentTime.getDate() + 1);
+      tomorrowStart.setHours(0, 0, 0, 0);
+      
+      const tomorrowEnd = new Date(tomorrowStart);
+      tomorrowEnd.setHours(23, 59, 59, 999);
+
+      // Use the existing formatTomorrowForecast logic
+      const dailyData = weatherData?.daily;
+      if (!dailyData || !dailyData.time) return null;
+
+      const tomorrowDateStr = tomorrowStart.toISOString().split('T')[0];
+      const tomorrowIndex = dailyData.time.findIndex(dateStr => dateStr === tomorrowDateStr);
+      
+      if (tomorrowIndex === -1) return null;
+
+      const tomorrowForecast = this.formatTomorrowForecast(weatherData, { tomorrowIndex }, lang);
+
+      return lang === 'ar' 
+        ? `\n\n===== تعليمات خاصة للمساعد الذكي =====
+المستخدم يسأل عن طقس الغد. يجب أن تعطي إجابة مفصلة ودقيقة باستخدام البيانات المحددة أدناه:
+
+${tomorrowForecast}
+
+تأكد من تقديم:
+- درجات الحرارة الدقيقة للصباح والظهيرة والمساء
+- نسبة هطول الأمطار لكل فترة
+- نصائح عملية للأنشطة المناسبة
+- توقيت أفضل ساعات اليوم
+
+لا تعطي إجابات عامة. استخدم البيانات المحددة أعلاه.
+=====================================`
+        : `\n\n===== SPECIAL AI INSTRUCTIONS =====
+User is asking about tomorrow's weather. You MUST provide detailed, specific answers using the data below:
+
+${tomorrowForecast}
+
+Ensure you provide:
+- Exact temperatures for morning, afternoon, evening
+- Rain percentages for each period  
+- Practical activity recommendations
+- Best hours of the day
+
+Do NOT give generic responses. Use the specific data above.
+======================================`;
+
+    } catch (error) {
+      console.error('Error building tomorrow instructions:', error);
+      return null;
     }
   }
 

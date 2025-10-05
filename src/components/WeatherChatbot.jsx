@@ -102,6 +102,30 @@ export default function WeatherChatbot({ weatherData, currentPlace, nasaData, la
         setIsTyping(true);
 
         try {
+            // Smart handling when weather data is missing
+            if (!weatherData || !currentPlace) {
+                // Instead of static responses, call AI with general weather knowledge
+                const aiResponse = await aiService.current.generateResponse(
+                    `${currentInput} (Note: No specific location data available, provide general weather guidance)`,
+                    null, // No weather data
+                    null, // No location
+                    lang,
+                    0,
+                    includeNASAData,
+                    nasaData
+                );
+
+                const missingDataMessage = {
+                    id: Date.now() + 1,
+                    type: 'bot',
+                    content: aiResponse,
+                    timestamp: new Date()
+                };
+                setMessages(prev => [...prev, missingDataMessage]);
+                setIsTyping(false);
+                return;
+            }
+
             // Call Gemini AI service with NASA data option
             const aiResponse = await aiService.current.generateResponse(
                 currentInput,
