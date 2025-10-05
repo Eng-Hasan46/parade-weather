@@ -67,7 +67,6 @@ export class NASAPowerService {
         },
         averages,
         dataCount: this.getDataCount(data),
-        raw: data, // Keep raw data for detailed analysis
       };
     } catch (error) {
       console.error("NASA POWER API Error:", error);

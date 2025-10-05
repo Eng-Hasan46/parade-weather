@@ -64,14 +64,14 @@ export default function App() {
     queryKey: ["data", place?.lat, place?.lon],
     queryFn: async () => {
       if (place?.lat && place?.lon && date) {
-        let data = await nasaPowerService.getAnnualAverageData(
+        let data = await nasaPowerService.getDailyRawData(
           place.lat,
           place.lon,
           date
         );
         return data;
       } else {
-        let data = await nasaPowerService.getAnnualAverageData(
+        let data = await nasaPowerService.getDailyRawData(
           40,
           40,
           new Date().toISOString().slice(0, 10)
@@ -537,7 +537,8 @@ export default function App() {
     try {
       // const selectedDate = new Date(date);
 
-      setNasaData(nasaResult);
+      const averages = calculateDateSpecificAverages(nasaResult.raw, date);
+      setNasaData({ ...nasaResult, averages: averages });
       setWeatherData(nasaResult);
 
       // Calculate CDF points and prediction from Elias logic
@@ -905,4 +906,192 @@ function Stat({ label, value, icon }) {
       <div className="text-2xl font-semibold">{value}</div>
     </div>
   );
+}
+function calculateDateSpecificAverages(data, targetDate) {
+  const parameters = data.properties?.parameter || {};
+  const averages = {};
+
+  // Extract month and day from target date (ignore year)
+  const dateObj = new Date(targetDate);
+  const targetMonth = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const targetDay = String(dateObj.getDate()).padStart(2, "0");
+  const targetMonthDay = targetMonth + targetDay; // Format: MMDD
+
+  // Filter data for the same month and day across all years
+  const getDateSpecificValues = (paramValues) => {
+    const specificValues = [];
+    for (const [dateStr, value] of Object.entries(paramValues)) {
+      if (
+        value !== null &&
+        value !== undefined &&
+        value !== -999 &&
+        !isNaN(value)
+      ) {
+        // Extract MMDD from YYYYMMDD
+        const monthDay = dateStr.substring(4, 8);
+        if (monthDay === targetMonthDay) {
+          specificValues.push(value);
+        }
+      }
+    }
+    return specificValues;
+  };
+
+  // Calculate averages for each parameter on this specific date across all years
+  for (const [param, values] of Object.entries(parameters)) {
+    if (typeof values === "object" && values !== null) {
+      const dateSpecificValues = getDateSpecificValues(values);
+
+      if (dateSpecificValues.length > 0) {
+        const sum = dateSpecificValues.reduce((acc, val) => acc + val, 0);
+        averages[param] = {
+          average: sum / dateSpecificValues.length,
+          min: Math.min(...dateSpecificValues),
+          max: Math.max(...dateSpecificValues),
+          count: dateSpecificValues.length,
+          unit: getParameterUnit(param),
+          yearsOfData: dateSpecificValues.length,
+        };
+      }
+    }
+  }
+
+  // Calculate date-specific rain probabilities
+  if (parameters.PRECTOTCORR) {
+    const precipValues = getDateSpecificValues(parameters.PRECTOTCORR);
+
+    if (precipValues.length > 0) {
+      // Rain probability for this specific date across all years
+      const rainyDays = precipValues.filter((val) => val > 0.1).length;
+      const rainProbability = (rainyDays / precipValues.length) * 100;
+
+      // Heavy rain probability for this date
+      const heavyRainDays = precipValues.filter((val) => val > 10).length;
+      const heavyRainProbability = (heavyRainDays / precipValues.length) * 100;
+
+      // Extreme rain probability for this date
+      const extremeRainDays = precipValues.filter((val) => val > 25).length;
+      const extremeRainProbability =
+        (extremeRainDays / precipValues.length) * 100;
+
+      // No rain probability for this date
+      const dryDays = precipValues.filter((val) => val <= 0.1).length;
+      const dryProbability = (dryDays / precipValues.length) * 100;
+
+      // Add date-specific rain statistics
+      averages["RAIN_PROBABILITY_TODAY"] = {
+        average: rainProbability,
+        min: 0,
+        max: 100,
+        count: precipValues.length,
+        unit: "%",
+        yearsOfData: precipValues.length,
+      };
+
+      averages["HEAVY_RAIN_PROBABILITY_TODAY"] = {
+        average: heavyRainProbability,
+        min: 0,
+        max: 100,
+        count: precipValues.length,
+        unit: "%",
+        yearsOfData: precipValues.length,
+      };
+
+      averages["EXTREME_RAIN_PROBABILITY_TODAY"] = {
+        average: extremeRainProbability,
+        min: 0,
+        max: 100,
+        count: precipValues.length,
+        unit: "%",
+        yearsOfData: precipValues.length,
+      };
+
+      averages["DRY_DAY_PROBABILITY_TODAY"] = {
+        average: dryProbability,
+        min: 0,
+        max: 100,
+        count: precipValues.length,
+        unit: "%",
+        yearsOfData: precipValues.length,
+      };
+    }
+  }
+
+  // Calculate weekly average around this date (±3 days)
+  const getWeeklyValues = (paramValues) => {
+    const weeklyValues = [];
+    for (const [dateStr, value] of Object.entries(paramValues)) {
+      if (
+        value !== null &&
+        value !== undefined &&
+        value !== -999 &&
+        !isNaN(value)
+      ) {
+        const month = dateStr.substring(4, 6);
+        const day = dateStr.substring(6, 8);
+        const monthDay = month + day;
+
+        // Check if this date is within ±3 days of target date
+        const targetDayNum = parseInt(targetDay);
+        const currentDayNum = parseInt(day);
+        const targetMonthNum = parseInt(targetMonth);
+        const currentMonthNum = parseInt(month);
+
+        if (currentMonthNum === targetMonthNum) {
+          const dayDiff = Math.abs(currentDayNum - targetDayNum);
+          if (dayDiff <= 3) {
+            weeklyValues.push(value);
+          }
+        }
+      }
+    }
+    return weeklyValues;
+  };
+
+  // Add weekly rain probability around this date
+  if (parameters.PRECTOTCORR) {
+    const weeklyPrecipValues = getWeeklyValues(parameters.PRECTOTCORR);
+
+    if (weeklyPrecipValues.length > 0) {
+      const weeklyRainyDays = weeklyPrecipValues.filter(
+        (val) => val > 0.1
+      ).length;
+      const weeklyRainProbability =
+        (weeklyRainyDays / weeklyPrecipValues.length) * 100;
+
+      averages["WEEKLY_RAIN_PROBABILITY"] = {
+        average: weeklyRainProbability,
+        min: 0,
+        max: 100,
+        count: weeklyPrecipValues.length,
+        unit: "%",
+        yearsOfData: Math.floor(weeklyPrecipValues.length / 7),
+      };
+    }
+  }
+
+  return averages;
+}
+
+function getParameterUnit(param) {
+  const units = {
+    T2M: "°C",
+    T2M_MAX: "°C",
+    T2M_MIN: "°C",
+    RH2M: "%",
+    PRECTOTCORR: "mm/day",
+    WS10M: "m/s",
+    WS10M_MAX: "m/s",
+    ALLSKY_SFC_SW_DWN: "kWh/m²/day",
+    WD2M: "°",
+    PS: "kPa",
+    QV2M: "g/kg",
+    CLOUD_AMT: "%",
+    RAIN_PROBABILITY_TODAY: "%",
+    HEAVY_RAIN_PROBABILITY_TODAY: "%",
+    EXTREME_RAIN_PROBABILITY_TODAY: "%",
+    DRY_DAY_PROBABILITY_TODAY: "%",
+    WEEKLY_RAIN_PROBABILITY: "%",
+  };
+  return units[param] || "";
 }
