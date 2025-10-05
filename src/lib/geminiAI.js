@@ -33,7 +33,7 @@ export class GeminiAIService {
 
     // Create comprehensive weather context
     let weatherContext = "";
-    
+
     if (weatherData && location) {
       // Full weather data available
       weatherContext = this.formatWeatherContext(
@@ -42,14 +42,15 @@ export class GeminiAIService {
         lang,
         nasaData
       );
-      
+
       // Add complete raw weather data for AI analysis
       const rawWeatherData = this.formatRawWeatherData(weatherData, lang);
       weatherContext += rawWeatherData;
     } else {
       // No specific weather data - provide general guidance
-      weatherContext = lang === 'ar' 
-        ? `لا توجد بيانات طقس محددة للموقع متاحة حالياً.
+      weatherContext =
+        lang === "ar"
+          ? `لا توجد بيانات طقس محددة للموقع متاحة حالياً.
 
 قدم نصائح عامة مفيدة حول الطقس والتخطيط بناءً على معرفتك العامة بأنماط الطقس والمناخ.
 
@@ -60,7 +61,7 @@ export class GeminiAIService {
 - توجيه المستخدم لاختيار موقع محدد للتوقعات الدقيقة
 
 اجعل إجابتك مفيدة وتفاعلية، ليس مجرد رد عام.`
-        : `No specific location weather data is currently available.
+          : `No specific location weather data is currently available.
 
 Provide helpful general weather and planning guidance based on your knowledge of weather patterns and climate.
 
@@ -237,13 +238,17 @@ Make your response helpful and interactive, not just a generic reply.`;
   // Fallback response when AI is overloaded
   getFallbackResponse(userMessage, weatherData, location, lang) {
     const isArabic = lang === "ar";
-    
-    console.log('[WeatherBot] Using fallback response:', {
+
+    console.log("[WeatherBot] Using fallback response:", {
       userMessage,
       hasWeatherData: !!weatherData,
       hasLocation: !!location,
-      reason: !weatherData ? 'missing weatherData' : !location ? 'missing location' : 'API error/overload',
-      timestamp: new Date().toISOString()
+      reason: !weatherData
+        ? "missing weatherData"
+        : !location
+        ? "missing location"
+        : "API error/overload",
+      timestamp: new Date().toISOString(),
     });
 
     if (!weatherData || !location) {
@@ -1135,7 +1140,7 @@ SPECIAL AI INSTRUCTIONS:
       "yearly",
       "annual",
       "january",
-      "february", 
+      "february",
       "march",
       "april",
       "may",
@@ -1144,7 +1149,7 @@ SPECIAL AI INSTRUCTIONS:
       "august",
       "september",
       "october",
-      "november", 
+      "november",
       "december",
       "winter",
       "spring",
@@ -1238,12 +1243,12 @@ SPECIAL AI INSTRUCTIONS:
 
     // Only redirect if it's clearly non-weather AND has no weather/activity context
     if (hasNonWeatherKeywords && !hasWeatherKeywords && !hasActivityKeywords) {
-      console.log('[WeatherBot] Redirecting non-weather query:', {
+      console.log("[WeatherBot] Redirecting non-weather query:", {
         userMessage,
         hasNonWeatherKeywords,
         hasWeatherKeywords,
         hasActivityKeywords,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
       return lang === "ar"
         ? `أنا مساعد ذكي متخصص في الطقس والمناخ! 🌤️
@@ -1386,11 +1391,12 @@ Remember: You are EXCLUSIVELY a weather and climate assistant!`;
   // Detect if user is asking about tomorrow
   detectTomorrowQuery(userMessage, lang) {
     const message = userMessage.toLowerCase();
-    const tomorrowKeywords = lang === 'ar' 
-      ? ['غدا', 'غداً', 'بكرا', 'يوم غد', 'الغد']
-      : ['tomorrow', 'tmrw', 'next day', 'tom'];
-    
-    return tomorrowKeywords.some(keyword => message.includes(keyword));
+    const tomorrowKeywords =
+      lang === "ar"
+        ? ["غدا", "غداً", "بكرا", "يوم غد", "الغد"]
+        : ["tomorrow", "tmrw", "next day", "tom"];
+
+    return tomorrowKeywords.some((keyword) => message.includes(keyword));
   }
 
   // Build special instructions for tomorrow queries
@@ -1401,7 +1407,7 @@ Remember: You are EXCLUSIVELY a weather and climate assistant!`;
       const tomorrowStart = new Date(currentTime);
       tomorrowStart.setDate(currentTime.getDate() + 1);
       tomorrowStart.setHours(0, 0, 0, 0);
-      
+
       const tomorrowEnd = new Date(tomorrowStart);
       tomorrowEnd.setHours(23, 59, 59, 999);
 
@@ -1409,14 +1415,20 @@ Remember: You are EXCLUSIVELY a weather and climate assistant!`;
       const dailyData = weatherData?.daily;
       if (!dailyData || !dailyData.time) return null;
 
-      const tomorrowDateStr = tomorrowStart.toISOString().split('T')[0];
-      const tomorrowIndex = dailyData.time.findIndex(dateStr => dateStr === tomorrowDateStr);
-      
+      const tomorrowDateStr = tomorrowStart.toISOString().split("T")[0];
+      const tomorrowIndex = dailyData.time.findIndex(
+        (dateStr) => dateStr === tomorrowDateStr
+      );
+
       if (tomorrowIndex === -1) return null;
 
-      const tomorrowForecast = this.formatTomorrowForecast(weatherData, { tomorrowIndex }, lang);
+      const tomorrowForecast = this.formatTomorrowForecast(
+        weatherData,
+        { tomorrowIndex },
+        lang
+      );
 
-      return lang === 'ar' 
+      return lang === "ar"
         ? `\n\n===== تعليمات خاصة للمساعد الذكي =====
 المستخدم يسأل عن طقس الغد. يجب أن تعطي إجابة مفصلة ودقيقة باستخدام البيانات المحددة أدناه:
 
@@ -1443,9 +1455,8 @@ Ensure you provide:
 
 Do NOT give generic responses. Use the specific data above.
 ======================================`;
-
     } catch (error) {
-      console.error('Error building tomorrow instructions:', error);
+      console.error("Error building tomorrow instructions:", error);
       return null;
     }
   }
