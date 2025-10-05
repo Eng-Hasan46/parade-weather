@@ -666,6 +666,20 @@ export default function App() {
         <div className="flex items-center gap-2">
           <span className="badge opacity-0 sm:opacity-100">🚀 NASA Space Apps 2025</span>
           <button
+            onClick={() => {
+              navigator.clipboard.writeText('https://weather-pred-node-api.vercel.app/api/predict');
+              // Optional: Show a temporary feedback
+              const btn = event.target;
+              const originalText = btn.textContent;
+              btn.textContent = '📋 Copied!';
+              setTimeout(() => btn.textContent = originalText, 2000);
+            }}
+            className="rounded-full px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 hover:text-blue-200 transition-colors"
+            title="Copy Weather Prediction API URL"
+          >
+            � API
+          </button>
+          <button
             onClick={() => setLang((l) => (l === "en" ? "ar" : "en"))}
             className="rounded-full px-3 py-1 bg-white/10 hover:bg-white/20"
           >
