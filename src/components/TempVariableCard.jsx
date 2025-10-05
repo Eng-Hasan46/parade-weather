@@ -122,9 +122,7 @@ export default function TempVariableCard({
                   {lang === "ar" ? "متوسط الحرارة" : "Avg Temperature"}
                 </div>
                 <div className="text-2xl font-bold text-white">
-                  {nasaData.averages?.T2M
-                    ? `${nasaData.averages.T2M.average.toFixed(1)}°C`
-                    : "--"}
+                  {Math.round(prediction.avg)}°C
                 </div>
               </div>
             </button>
@@ -138,12 +136,12 @@ export default function TempVariableCard({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm "
               onClick={() => setExpanded(null)}
             >
               <motion.div
                 layoutId={id}
-                className="relative w-[1000px] max-w-[90vw] max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl"
+                className="relative w-[1000px] max-w-[90vw] max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl pb-40"
                 onClick={(e) => e.stopPropagation()}
                 initial={{ scale: 0.9, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
@@ -185,7 +183,10 @@ export default function TempVariableCard({
                         <div className="grid grid-cols-3 gap-4">
                           <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
                             <div className="flex items-center gap-2 mb-1">
-                              <TrendingUp size={16} className="text-orange-600" />
+                              <TrendingUp
+                                size={16}
+                                className="text-orange-600"
+                              />
                               <p className="text-sm text-gray-600">Max Temp</p>
                             </div>
                             <p className="text-3xl font-bold text-gray-800">
@@ -194,7 +195,10 @@ export default function TempVariableCard({
                           </div>
                           <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
                             <div className="flex items-center gap-2 mb-1">
-                              <Thermometer size={16} className="text-blue-600" />
+                              <Thermometer
+                                size={16}
+                                className="text-blue-600"
+                              />
                               <p className="text-sm text-gray-600">Avg Temp</p>
                             </div>
                             <p className="text-3xl font-bold text-gray-800">
@@ -203,7 +207,10 @@ export default function TempVariableCard({
                           </div>
                           <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-lg p-4 border border-cyan-200">
                             <div className="flex items-center gap-2 mb-1">
-                              <TrendingDown size={16} className="text-cyan-600" />
+                              <TrendingDown
+                                size={16}
+                                className="text-cyan-600"
+                              />
                               <p className="text-sm text-gray-600">Min Temp</p>
                             </div>
                             <p className="text-3xl font-bold text-gray-800">
@@ -325,7 +332,7 @@ export default function TempVariableCard({
                             slopeAndIntercept={slopeAndInterceptAvg}
                           />
                         )}
-                      { }
+                      {}
                       {prediction && (
                         <div className="">
                           <HeatMap variable="avgTemp" />{" "}

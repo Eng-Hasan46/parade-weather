@@ -125,9 +125,7 @@ export default function WindSpeedCard({
                 {lang === "ar" ? "سرعة الرياح" : "Wind Speed"}
               </div>
               <div className="text-2xl font-bold text-white">
-                {nasaData.averages?.WS10M
-                  ? `${nasaData.averages.WS10M.average.toFixed(1)} m/s`
-                  : "--"}
+                {predictedWindSpeed} m/s
               </div>
             </div>
           </motion.div>
@@ -145,7 +143,7 @@ export default function WindSpeedCard({
           >
             <motion.div
               layoutId={id}
-              className="relative w-[1000px] max-w-[90vw] max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl"
+              className="relative w-[1000px] max-w-[90vw] max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl  pb-40"
               onClick={(e) => e.stopPropagation()}
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
@@ -195,7 +193,7 @@ export default function WindSpeedCard({
                           <p className="text-3xl font-bold text-gray-800">
                             {predictedWindSpeed == oneStd[1]
                               ? `${predictedWindSpeed} km/h`
-                              : `${predictedWindSpeed} - ${oneStd[1]} mm`}
+                              : `${predictedWindSpeed} - ${oneStd[1]} m/s`}
                           </p>
                           <p className="font-bold text-gray-500">
                             {predictionFormatted.text}
@@ -216,7 +214,7 @@ export default function WindSpeedCard({
                               68% Confidence (±1σ)
                             </p>
                             <p className="text-sm text-gray-700">
-                              {oneStd[0]} km/h - {oneStd[1]} km/h
+                              {oneStd[0]} m/s - {oneStd[1]} m/s
                             </p>
                           </div>
                           <div className="border border-gray-200 rounded-lg p-4">
@@ -224,7 +222,7 @@ export default function WindSpeedCard({
                               95% Confidence (±2σ)
                             </p>
                             <p className="text-sm text-gray-700">
-                              {twoStd[0]} km/h - {twoStd[1]} km/h
+                              {twoStd[0]} m/s - {twoStd[1]} m/s
                             </p>
                           </div>
                           <div className="border border-gray-200 rounded-lg p-4">
@@ -232,7 +230,7 @@ export default function WindSpeedCard({
                               99.7% Confidence (±3σ)
                             </p>
                             <p className="text-sm text-gray-700">
-                              {threeStd[0]} km/h - {threeStd[1]} km/h
+                              {threeStd[0]} m/s - {threeStd[1]} m/s
                             </p>
                           </div>
                         </div>

@@ -124,7 +124,7 @@ export default function HeatMap({ variable }) {
         })}
         cellHeight="14px"
 
-      // cellRender={(value) => value && <span>{value}</span>}
+        // cellRender={(value) => value && <span>{value}</span>}
       />
     </div>
   );
@@ -141,7 +141,7 @@ function constructHeatmapData(variableData) {
   let n = 0;
   let yearArray = [];
   let data = [];
-  let minimumValue = 0;
+  let minimumValue = 1000;
   const maxYear = new Date(formatDate(dates[dates.length - 1])).getFullYear();
   console.log("yeeeeeer: ", maxYear, previousYear);
   const yearRange = Array.from(
@@ -191,10 +191,11 @@ function constructHeatmapData(variableData) {
   const length = yearArray.length;
   if (length > 0) {
     for (let i = 0; i < 12 - length; i++) {
-      yearArray.push(minimumValue - 0.5);
+      yearArray.push(minimumValue - 0.1);
     }
     data.push(yearArray);
   }
+  console.log("minimum: ", minimumValue);
   return { data, yearRange };
 }
 

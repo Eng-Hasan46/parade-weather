@@ -169,7 +169,7 @@ export default function SnowCard({
           >
             <motion.div
               layoutId={id}
-              className="relative w-[1000px] max-w-[90vw] max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl"
+              className="relative w-[1000px] max-w-[90vw] max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl pb-40"
               onClick={(e) => e.stopPropagation()}
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
@@ -400,26 +400,14 @@ export default function SnowCard({
                       )}
 
                     {/* Heat Maps */}
-                    <div className="space-y-40">
+                    <div className="">
                       <HeatMap variable="snowDepth" />
                       <div className="mb-30"></div>
                     </div>
                   </>
                 )}
-                {!(nasaData.averages?.PRECTOTCORR && nasaData.averages?.T2M) && (
-                  <div className="text-center py-4 text-gray-500 text-sm">
-                    NASA weather data is loading. Please wait...
-                  </div>
-                )}
-                {nasaData.averages?.PRECTOTCORR && nasaData.averages?.T2M &&
-                  nasaData.averages.T2M.average >= 5 && (
-                    <div className="text-center py-8 text-gray-500">
-                      <div className="text-6xl mb-4">🌡️</div>
-                      <h3 className="text-xl font-semibold text-gray-700 mb-2">No Snow Data Available</h3>
-                      <p className="text-sm">Average temperature ({nasaData.averages.T2M.average.toFixed(1)}°C) is too warm for snow formation.</p>
-                      <p className="text-xs text-gray-400 mt-2">Snow typically occurs when temperatures are below 5°C</p>
-                    </div>
-                  )}
+
+
               </motion.div>
             </motion.div>
           </motion.div>

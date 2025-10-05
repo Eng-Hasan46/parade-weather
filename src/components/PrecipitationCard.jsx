@@ -70,7 +70,10 @@ export default function PrecipitationCard({
         Math.round(predictedRainfall + 3 * meanAndStd.standardDeviation)
       ),
     ];
-    const predictionFormatted = formatters.rainfall(predictedRainfall, oneStd[1]);
+    const predictionFormatted = formatters.rainfall(
+      predictedRainfall,
+      oneStd[1]
+    );
 
     return (
       <>
@@ -140,8 +143,10 @@ export default function PrecipitationCard({
                   {lang === "ar" ? "الأمطار" : "Precipitation"}
                 </div>
                 <div className="text-2xl font-bold text-white">
-                  {nasaData.averages?.PRECTOTCORR
-                    ? `${nasaData.averages.PRECTOTCORR.average.toFixed(1)} mm`
+                  {nasaData.averages?.RAIN_PROBABILITY_TODAY
+                    ? `${nasaData.averages.RAIN_PROBABILITY_TODAY.average.toFixed(
+                        1
+                      )}%`
                     : "--"}
                 </div>
               </div>
@@ -160,7 +165,7 @@ export default function PrecipitationCard({
             >
               <motion.div
                 layoutId={id}
-                className="relative w-[1000px] max-w-[90vw] max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl"
+                className="relative w-[1000px] max-w-[90vw] max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl  pb-40"
                 onClick={(e) => e.stopPropagation()}
                 initial={{ scale: 0.9, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
@@ -202,7 +207,10 @@ export default function PrecipitationCard({
                         <div className="grid grid-cols-3 gap-4">
                           <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
                             <div className="flex items-center gap-2 mb-1">
-                              <TrendingUp size={16} className="text-orange-600" />
+                              <TrendingUp
+                                size={16}
+                                className="text-orange-600"
+                              />
                               <p className="text-sm text-gray-600">Rain Fall</p>
                             </div>
                             <p className="text-3xl font-bold text-gray-800">
@@ -269,7 +277,7 @@ export default function PrecipitationCard({
                         slopeAndIntercept={slopeAndIntercept}
                       />
                     )}
-                  { }
+                  {}
                   {prediction && (
                     <div className="">
                       <HeatMap variable="rainFall" />{" "}

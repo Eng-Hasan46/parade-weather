@@ -15,6 +15,8 @@ export class NASAPowerService {
       "PS", // Surface Pressure (kPa)
       "QV2M", // Specific Humidity at 2 Meters (g/kg)
       "CLOUD_AMT", // Cloud Amount (%)
+      "SNODP", // snow depth,
+      "PRECSNO", // snowfall
     ];
   }
 
@@ -23,7 +25,7 @@ export class NASAPowerService {
       // Use historical data from 1981 to current year for comprehensive climate analysis
       const currentYear = new Date().getFullYear();
       const startDate = "19810101"; // January 1, 1981
-      const endDate = `${currentYear}1231`; // December 31 of current year
+      const endDate = `20241231`; // December 31 of current year
 
       // Build the API URL
       const params = new URLSearchParams({
@@ -64,6 +66,53 @@ export class NASAPowerService {
           targetDate: date,
         },
         averages,
+        dataCount: this.getDataCount(data),
+      };
+    } catch (error) {
+      console.error("NASA POWER API Error:", error);
+      throw error;
+    }
+  }
+  async getDailyRawData(latitude, longitude) {
+    try {
+      // Use historical data from 1981 to current year for comprehensive climate analysis
+      const startDate = "19810101"; // January 1, 1981
+      const endDate = `20241231`; // December 31 of current year
+
+      // Build the API URL
+      const params = new URLSearchParams({
+        start: startDate,
+        end: endDate,
+        latitude: latitude.toFixed(6),
+        longitude: longitude.toFixed(6),
+        community: "RE",
+        parameters: this.parameters.join(","),
+        format: "JSON",
+        user: "anonymous",
+      });
+
+      const url = `${this.baseUrl}?${params.toString()}`;
+
+      console.log("NASA POWER API Request (1981-Present):", url);
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(
+          `NASA POWER API error: ${response.status} - ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+
+      return {
+        location: {
+          latitude,
+          longitude,
+          startYear: 1981,
+          endYear: 2024,
+          yearsOfData: 2024 - 1981 + 1,
+        },
         dataCount: this.getDataCount(data),
         raw: data, // Keep raw data for detailed analysis
       };

@@ -36,27 +36,51 @@ export default function CloudCoverCard({
     ? Math.round(Math.max(0, nasaData.averages.CLOUD_AMT.average))
     : 0;
   const oneStd = [
-    Math.max(0, Math.round(predictedCloudCover - meanAndStd.standardDeviation)),
-    Math.max(0, Math.round(predictedCloudCover + meanAndStd.standardDeviation)),
+    Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(predictedCloudCover - meanAndStd.standardDeviation)
+      )
+    ),
+    Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(predictedCloudCover + meanAndStd.standardDeviation)
+      )
+    ),
   ];
   const twoStd = [
     Math.max(
       0,
-      Math.round(predictedCloudCover - 2 * meanAndStd.standardDeviation)
+      Math.min(
+        100,
+        Math.round(predictedCloudCover - 2 * meanAndStd.standardDeviation)
+      )
     ),
     Math.max(
       0,
-      Math.round(predictedCloudCover + 2 * meanAndStd.standardDeviation)
+      Math.min(
+        100,
+        Math.round(predictedCloudCover + 2 * meanAndStd.standardDeviation)
+      )
     ),
   ];
   const threeStd = [
     Math.max(
       0,
-      Math.round(predictedCloudCover - 3 * meanAndStd.standardDeviation)
+      Math.min(
+        100,
+        Math.round(predictedCloudCover - 3 * meanAndStd.standardDeviation)
+      )
     ),
     Math.max(
       0,
-      Math.round(predictedCloudCover + 3 * meanAndStd.standardDeviation)
+      Math.min(
+        100,
+        Math.round(predictedCloudCover + 3 * meanAndStd.standardDeviation)
+      )
     ),
   ];
   const predictionFormatted = formatters.cloud(predictedCloudCover);
@@ -145,7 +169,7 @@ export default function CloudCoverCard({
           >
             <motion.div
               layoutId={id}
-              className="z-[500] relative w-[1000px] max-w-[90vw] max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl"
+              className="z-[500] relative w-[1000px] max-w-[90vw] max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl pb-40"
               onClick={(e) => e.stopPropagation()}
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}

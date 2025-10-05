@@ -31,33 +31,54 @@ export default function HumidityCard({
   const isOpen = expanded === id;
   const slopeAndIntercept = calculateSlopeAndIntercept(dataPoints);
   const meanAndStd = calculateMeanAndStandardDeviation(dataPoints);
-  // Use NASA data for actual humidity values instead of prediction slope
-  const predictedHumidity = nasaData.averages?.RH2M
-    ? Math.round(Math.max(0, nasaData.averages.RH2M.average))
-    : 0;
+  const predictedHumidity = Math.min(100, prediction);
 
   const oneStd = [
-    Math.max(0, Math.round(predictedHumidity - meanAndStd.standardDeviation)),
-    Math.max(0, Math.round(predictedHumidity + meanAndStd.standardDeviation)),
+    Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(predictedHumidity - meanAndStd.standardDeviation)
+      )
+    ),
+    Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(predictedHumidity + meanAndStd.standardDeviation)
+      )
+    ),
   ];
   const twoStd = [
     Math.max(
       0,
-      Math.round(predictedHumidity - 2 * meanAndStd.standardDeviation)
+      Math.min(
+        100,
+        Math.round(predictedHumidity - 2 * meanAndStd.standardDeviation)
+      )
     ),
     Math.max(
       0,
-      Math.round(predictedHumidity + 2 * meanAndStd.standardDeviation)
+      Math.min(
+        100,
+        Math.round(predictedHumidity + 2 * meanAndStd.standardDeviation)
+      )
     ),
   ];
   const threeStd = [
     Math.max(
       0,
-      Math.round(predictedHumidity - 3 * meanAndStd.standardDeviation)
+      Math.min(
+        100,
+        Math.round(predictedHumidity - 3 * meanAndStd.standardDeviation)
+      )
     ),
     Math.max(
       0,
-      Math.round(predictedHumidity + 3 * meanAndStd.standardDeviation)
+      Math.min(
+        100,
+        Math.round(predictedHumidity + 3 * meanAndStd.standardDeviation)
+      )
     ),
   ];
 
@@ -128,9 +149,7 @@ export default function HumidityCard({
                 {lang === "ar" ? "الرطوبة" : "Humidity"}
               </div>
               <div className="text-2xl font-bold text-white">
-                {nasaData.averages?.RH2M
-                  ? `${nasaData.averages.RH2M.average.toFixed(1)}%`
-                  : "--"}
+                {predictedHumidity}%
               </div>
             </div>
           </motion.div>
@@ -148,7 +167,7 @@ export default function HumidityCard({
           >
             <motion.div
               layoutId={id}
-              className="relative w-[1000px] max-w-[90vw] max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl"
+              className="relative w-[1000px] max-w-[90vw] max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl  pb-40"
               onClick={(e) => e.stopPropagation()}
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
